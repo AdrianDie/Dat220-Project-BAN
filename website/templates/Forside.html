@@ -1,0 +1,23 @@
+{% extends "Base.html" %}
+
+{% block title %}Forside{% endblock %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+<div class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-heading-wrapper">
+                <h1 class="hero-heading">Velkommen til BLAD SPILL</h1>
+                <p class="sub-heading">Utforsk vårt utvalg av spennende spill og utfordringer!</p>
+            </div>
+            <div class="button-wrapper">
+                <a href="/oversikt-spill" class="button-with-icon">Spill nå</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mattespill</title>
+    <link href="{{url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    {% extends "Base.html" %}
+
+{% block content %}
+    <div class="spill-container">
+        <div  class="card shadow-lg p-4 mb-4 bg-white">
+            <h1 class="card-title">Mattespill</h1>
+            <div id="highScore" class="scoreboard">High Score: 0</div>
+            <div id="currentScore" class="scoreboard">Current Score: 0</div>
+            <div id="timeLeft" class="scoreboard" hidden>Time Left: 10</div>
+            <p class="questionText" id="question"></p>
+            <div class="btn-grid">
+                <button onclick="checkAnswer(1)" id="btn1" class="math-game-btn btn-primary answer-btn" disabled>0</button>
+                <button onclick="checkAnswer(2)" id="btn2" class="math-game-btn btn-primary answer-btn" disabled>0</button>
+                <button onclick="checkAnswer(3)" id="btn3" class="math-game-btn btn-primary answer-btn" disabled>0</button>
+                <button onclick="checkAnswer(4)" id="btn4" class="math-game-btn btn-primary answer-btn" disabled>0</button>
+            </div>
+            <button id="button" class="btn-primary btn-success button">Start</button>
+            <div class="space-60px"></div>
+        </div>
+    </div>
+   
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const button = document.getElementById("button");
+            const highScoreDisplay = document.getElementById("highScore");
+            let highScore = localStorage.getItem("highScore") || 0;
+            highScoreDisplay.innerHTML = "High Score: " + highScore;
+
+            button.addEventListener("click", function () {
+                startGame();
+            });
+
+            function startGame() {
+                let score = 0;
+                const scoreText = document.getElementById("currentScore");
+                const timeLeft = document.getElementById("timeLeft");
+                timeLeft.hidden = false;
+                timeLeft.innerHTML = "Time Left: 10";
+                let timeRemaining = 10;
+
+                const interval = setInterval(function () {
+                    timeRemaining--;
+                    timeLeft.innerHTML = "Time Left: " + timeRemaining;
+                    if (timeRemaining === 0) {
+                        clearInterval(interval);
+                        timeLeft.hidden = true;
+                        if (score > highScore) {
+                            highScore = score;
+                            localStorage.setItem("highScore", highScore);
+                            highScoreDisplay.innerHTML = "High Score: " + highScore;
+                        }
+                        scoreText.innerHTML = "Game Over! Score: " + score;
+                        enableButtons(false);
+                    }
+                }, 1000);
+
+                enableButtons(true);
+                generateQuestion();
+
+                function generateQuestion() {
+    const btn1 = document.getElementById("btn1");
+    const btn2 = document.getElementById("btn2");
+    const btn3 = document.getElementById("btn3");
+    const btn4 = document.getElementById("btn4");
+    const questionDisplay = document.getElementById("question");
+
+    // Choose two integers randomly so that the product does not exceed 144
+    let a = Math.floor(Math.random() * 12) + 1; // Generates numbers from 1 to 12
+    let b = Math.floor(Math.random() * 12) + 1; // Generates numbers from 1 to 12
+    let answer = a * b;
+
+    // Generate incorrect answers
+    let wrongAnswers = [];
+    while (wrongAnswers.length < 3) {
+        let wrongAnswer = Math.floor(Math.random() * 144) + 1;
+        if (wrongAnswer !== answer && !wrongAnswers.includes(wrongAnswer)) {
+            wrongAnswers.push(wrongAnswer);
+        }
+    }
+    let answers = [...wrongAnswers, answer].sort(() => Math.random() - 0.5);
+
+    // Set answers to the buttons
+    btn1.innerHTML = answers[0];
+    btn2.innerHTML = answers[1];
+    btn3.innerHTML = answers[2];
+    btn4.innerHTML = answers[3];
+
+    // Display the question
+    questionDisplay.innerHTML = `${a} * ${b} = ?`;
+
+    // Assign click handlers to check the answer
+    btn1.onclick = () => checkAnswer(answers[0]);
+    btn2.onclick = () => checkAnswer(answers[1]);
+    btn3.onclick = () => checkAnswer(answers[2]);
+    btn4.onclick = () => checkAnswer(answers[3]);
+
+    function checkAnswer(selectedAnswer) {
+        if (selectedAnswer === answer) {
+            score++;
+            scoreText.innerHTML = "Current Score: " + score;
+        }
+        generateQuestion(); // Generate a new question immediately after an answer is chosen
+    }
+}
+
+        function enableButtons(enable) {
+            btn1.disabled = !enable;
+            btn2.disabled = !enable;
+            btn3.disabled = !enable;
+            btn4.disabled = !enable;
+        }
+    }
+});
+    </script>
+     {% endblock %}
+
+</body>
+</html>

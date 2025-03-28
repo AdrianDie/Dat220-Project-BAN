@@ -1,0 +1,130 @@
+from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for
+from flask_login import login_required, current_user
+from .models import User, HighScores, Note
+from . import db
+import json
+
+# Oppretter en Blueprint kalt 'views_bp' som brukes til å definere ruter og visninger for applikasjonen.
+views_bp = Blueprint('views_bp', __name__)
+
+# Forsidevisning
+@views_bp.route('/')
+def home():
+    return render_template("Forside.html", user=current_user)
+
+# Spillvisning
+@views_bp.route('/mattespill')
+@login_required
+def spill():
+    return render_template("Spill-mattespill.html", user=current_user)
+
+# Snake-spillvisning
+@views_bp.route('/snake')
+@login_required
+def snake():
+    return render_template("Spill-snake.html", user=current_user)
+
+# Sender score til serveren for lagring i databasen
+@views_bp.route('/submit-score', methods=['POST'])
+@login_required
+def submit_score():
+    data = request.get_json()
+    score = data.get('score')
+
+    if score:
+        new_score = HighScores(score=int(score), user_id=current_user.id)
+        db.session.add(new_score)
+        db.session.commit()
+        return jsonify({"message": "Poengsum lagret"}), 200
+    return jsonify({"error": "Ingen poengsum oppgitt"}), 400
+
+# Henter de tre høyeste poengsummene fra databasen og returnerer dem som JSON
+@views_bp.route('/high-scores')
+@login_required
+def high_scores():
+    top_scores = HighScores.query.order_by(HighScores.score.desc()).limit(3).all()
+    scores_data = [{"username": score.user.username, "score": score.score} for score in top_scores]
+    return jsonify(scores_data)
+
+# Brukeroversikt for administratorer
+@views_bp.route('/oversikt-brukere')
+@login_required
+def brukeroversikt():
+    if current_user.user_role == 'admin':
+        search_query = request.args.get('search', '')
+        if search_query:
+            users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
+        else:
+            users = User.query.all()
+        return render_template('Oversikt-brukere.html', user=current_user, users=users)
+    else:
+        flash('Du har ikke tilgang til denne siden.', category='error')
+        return redirect(url_for('views_bp.home'))
+
+# Sletter bruker fra databasen (kun for administratorer)
+@views_bp.route('/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if current_user.user_role == 'admin':
+        user_to_delete = User.query.get_or_404(user_id)
+        if user_to_delete.user_role == 'regular':
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash('Bruker slettet', category='success')
+        else:
+            flash('Kan ikke slette brukere som ikke er "regular"', category='error')
+    else:
+        flash('Ingen tilgang', category='error')
+    return redirect(url_for('views_bp.brukeroversikt'))
+
+# Sprettballen-spillvisning (krever pålogging)
+@views_bp.route('/sprettball')
+@login_required
+def sprettballen():
+    return render_template("Spill-sprettball.html", user=current_user)
+
+# Bildegate-visning (krever pålogging)
+@views_bp.route('/bildegate')
+@login_required
+def bilde_gate():
+    return render_template("Spill-bildegater.html", user=current_user)
+
+# Spillside-visning (krever pålogging)
+@views_bp.route('/oversikt-spill')
+@login_required
+def spillside():
+    return render_template("Oversikt-spill.html", user=current_user)
+
+# Notatsidevisning (krever pålogging)
+@views_bp.route('/notes', methods=['GET'])
+@login_required
+def notes():
+    user_notes = Note.query.filter_by(user_id=current_user.id).all()
+    return render_template("Notes.html", user=current_user, notes=user_notes)
+
+# Legger til et nytt notat til databasen
+@views_bp.route('/add-note', methods=['POST'])
+@login_required
+def add_note():
+    note_content = request.form.get('note')
+    if note_content:
+        new_note = Note(data=note_content, user_id=current_user.id)
+        db.session.add(new_note)
+        db.session.commit()
+        flash('Notat lagret!', category='success')
+    else:
+        flash('Notatfeltet kan ikke være tom.', category='error')
+    return redirect(url_for('views_bp.notes'))
+
+# Sletter et notat fra databasen
+@views_bp.route('/delete-note/<int:note_id>', methods=['POST'])
+@login_required
+def delete_note(note_id):
+    note = Note.query.get_or_404(note_id)
+    if note.user_id == current_user.id:  # Sikrer at kun eieren kan slette notatet
+        db.session.delete(note)
+        db.session.commit()
+        flash('Notat slettet!', category='success')
+    else:
+        flash('Ingen tilgang til å slette dette notatet.', category='error')
+    return redirect(url_for('views_bp.notes'))

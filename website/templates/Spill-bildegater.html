@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Quiz</title>
+    <link href="{{url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% extends "Base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div class="spill-container">
+        <h1 class="program-title">Bildegåter</h1>
+        <div class="image-quiz-container">
+            <img id="mainImage" src="{{ url_for('static', filename='bok.jpg') }}" height="450">
+            <div class="controls">
+                <label for="answer" class="form-label">Hva er dette?</label>
+                <input id="answer" type="text" class="form-control">
+                <div class="score">Poeng: <span id="score">0</span>/6</div>
+            </div>
+        </div>
+        <div id="quiz-flash-message" class="quiz-flash-message"></div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    let answerField = document.querySelector("#answer");
+    let image = document.querySelector("#mainImage");
+    let scoreSpan = document.querySelector("#score");
+    let flashMessage = document.querySelector("#quiz-flash-message");
+
+    let images = [
+        "{{ url_for('static', filename='bok.jpg') }}",
+        "{{ url_for('static', filename='gull.jpeg') }}",
+        "{{ url_for('static', filename='maanen.jpg') }}",
+        "{{ url_for('static', filename='skip.png') }}",
+        "{{ url_for('static', filename='t-skjorte.jpg') }}",
+        "{{ url_for('static', filename='tre.jpg') }}"
+    ];
+    
+    let correctAnswers = ["bok", "gull", "måne", "skip", "t-skjorte", "tre"];
+    let current = 0;
+    let points = [0, 0, 0, 0, 0, 0];
+
+    function showFlashMessage(type, message) {
+        flashMessage.className = `quiz-flash-message ${type}`;
+        flashMessage.innerText = message;
+        flashMessage.style.visibility = "visible";
+        setTimeout(() => {
+            flashMessage.style.visibility = "hidden";
+        }, 5000);
+    }
+
+    function checkAnswer() {
+        let answer = answerField.value.toLowerCase();
+        if (answer === correctAnswers[current]) {
+            points[current] = 1;
+            showFlashMessage("flash-success", "Riktig!");
+        } else {
+            showFlashMessage("flash-error", `Feil svar, riktig svar er: ${correctAnswers[current]}`);
+        }
+        updateScore();
+        nextImage();
+    }
+
+    function nextImage() {
+        current++;
+        if (current < images.length) {
+            image.src = images[current];
+            answerField.value = "";
+            answerField.focus();
+        } else {
+            let total = points.reduce((a, b) => a + b, 0);
+            showFlashMessage("flash-success", `Du er ferdig! Du fikk ${total} av 6 poeng!`);
+        }
+    }
+
+    function updateScore() {
+        let total = points.reduce((a, b) => a + b, 0);
+        scoreSpan.innerText = total;
+    }
+
+    answerField.addEventListener("change", checkAnswer);
+</script>
+{% endblock %}
+</body>
+</html>

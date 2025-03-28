@@ -1,0 +1,78 @@
+{% extends 'Base.html' %}
+{% block content %}
+<div class="notes-form-container">
+    <h1>Dine Notater</h1>
+    <form action="{{ url_for('views_bp.add_note') }}" method="post">
+        <textarea class="notes-textarea" name="note" placeholder="Skriv ditt notat her..."></textarea>
+        <button class="notes-save-btn" type="submit">Lagre Notat</button>
+    </form>
+</div>
+
+<div class="theme-switcher">
+    <button onclick="toggleTheme()">Bytt Tema</button>
+</div>
+
+<div class="search-container">
+    <input type="text" id="search-input" onkeyup="searchNotes()" placeholder="Søk i notater...">
+</div>
+
+<div class="notes-display-container" id="notes-display-container">
+    {% for note in notes %}
+    <div class="note-card" draggable="true" ondragstart="drag(event)" id="note-{{ note.id }}">
+        <p>{{ note.data }}</p>
+        <p class="note-date">{{ note.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</p>
+        <form action="{{ url_for('views_bp.delete_note', note_id=note.id) }}" method="post">
+            <button class="note-delete-btn" type="submit">Slett</button>
+        </form>
+    </div>
+    {% else %}
+    <p>Ingen notater funnet.</p>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colors = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'];
+    const noteCards = document.querySelectorAll('.note-card');
+    noteCards.forEach(card => {
+        const colorIndex = Math.floor(Math.random() * colors.length);
+        card.style.backgroundColor = colors[colorIndex];
+        card.style.transform = `rotate(${Math.floor(Math.random() * 10) - 5}deg)`; 
+    });
+});
+
+function drag(event) {
+    event.dataTransfer.setData("text", event.target.id);
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+}
+
+function drop(event) {
+    event.preventDefault();
+    const data = event.dataTransfer.getData("text");
+    const note = document.getElementById(data);
+    event.target.closest('.notes-display-container').appendChild(note);
+}
+
+const notesContainer = document.getElementById('notes-display-container');
+notesContainer.addEventListener('dragover', allowDrop);
+notesContainer.addEventListener('drop', drop);
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-theme');
+}
+
+function searchNotes() {
+    const input = document.getElementById('search-input');
+    const filter = input.value.toLowerCase();
+    const noteCards = document.querySelectorAll('.note-card');
+
+    noteCards.forEach(card => {
+        const text = card.textContent || card.innerText;
+        card.style.display = text.toLowerCase().includes(filter) ? "" : "none";
+    });
+}
+</script>
+{% endblock %}

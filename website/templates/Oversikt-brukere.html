@@ -1,0 +1,77 @@
+{% extends "Base.html" %}
+
+{% block title %}BrukerOversikt{% endblock %}
+
+{% block content %}
+    <h1 class="oversikt-title">Brukeroversikt</h1>
+    <form method="GET" action="{{ url_for('views_bp.brukeroversikt') }}" class="search-form" onsubmit="return validateSearch()">
+        <input type="text" name="search" id="search" placeholder="Søk etter brukernavn" value="{{ request.args.get('search', '') }}" class="search-input">
+        <button type="submit" class="search-btn">Søk</button>
+        <button type="button" class="show-all-btn" onclick="showAllUsers()">Vis alle</button>
+    </form>
+    <br>
+    <div class="table-container">
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Brukernavn</th>
+                    <th>Rolle</th>
+                    <th>Slett</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.user_role }}</td>
+                    <td>
+                        {% if user.user_role == 'regular' %}
+                        <form action="{{ url_for('views_bp.delete_user', user_id=user.id) }}" method="POST">
+                            <button type="submit" class="delete-btn">X</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Hent lagret søk når siden lastes
+        document.addEventListener('DOMContentLoaded', function() {
+            var savedSearch = localStorage.getItem('savedSearch');
+            if (savedSearch) {
+                document.getElementById('search').value = savedSearch;
+            }
+        });
+
+        function validateSearch() {
+            var searchInput = document.getElementById('search').value;
+
+            if (searchInput.includes(' ')) {
+                alert('Søkestrengen kan ikke inneholde mellomrom');
+                return false;
+            }
+            // Lagre søket i localStorage
+            localStorage.setItem('savedSearch', searchInput);
+            return true;
+        }
+
+        function showAllUsers() {
+            window.location.href = "{{ url_for('views_bp.brukeroversikt') }}";
+        }
+
+        window.onload = function() {
+    var savedSearch = localStorage.getItem('savedSearch');
+    if (savedSearch) {
+        document.getElementById('search').value = savedSearch;
+        document.getElementById('searchForm').submit(); // Automatisk submit skjemaet når siden lastes
+    }
+};
+
+
+    </script>
+{% endblock %}

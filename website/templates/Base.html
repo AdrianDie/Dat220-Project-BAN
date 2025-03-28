@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>DAT310 - prosjekt</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <meta name="description" content="Velkommen til vårt DAT310-spillprosjekt! Perfekt for spillentusiaster og studenter.">
+    <!-- Favikonet er publisert på nettet, men det er eget ikon-->
+    <link rel="icon" href="{{ url_for('static', filename='favicon-32x32.png') }}" type="image/png" sizes="32x32">
+    <!-- Linker til CSS-filen ved bruk av Flask's url_for-funksjon for å dynamisk generere URL-en til den statiske filen -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="body">
+  <div class="header-navbar w-nav">
+    <a href="/" class="w-nav-brand">
+        <h5 class="logo">bl</h5>
+        <h5 class="logo ad">ad</h5>
+    </a>
+    <div class="nav-menu-container w-container">
+        <nav role="navigation" class="nav-menu w-nav-menu">
+            <!-- Sjekker om brukeren ikke er autentisert -->
+            {% if not user.is_authenticated %}
+                <a href="/login" class="nav-link w-nav-link">Logg inn</a>
+                <a href="/signup" class="nav-link w-nav-link">Registrer</a>
+            <!-- Hvis brukeren er autentisert -->
+            {% else %}
+                <!-- Hvis brukeren har rollen 'admin', vis en ekstra lenke til brukeroversikt -->
+                {% if user.user_role == 'admin' %}
+                    <a href="/oversikt-brukere" class="nav-link w-nav-link">Brukeroversikt</a>
+                {% endif %}
+                <a href="/oversikt-spill" class="nav-link w-nav-link">Spill</a>
+                <a href="/notes" class="nav-link w-nav-link">Notater</a>
+                <a href="/update_password" class="nav-link w-nav-link">Oppdater Passord</a>
+                <a href="/logout" class="nav-link w-nav-link">Logg ut</a>
+                <div class="user-info">
+                  <!-- Viser brukerens profilbilde og brukernavn -->
+                  <img src="{{ url_for('static', filename='manicon.jpg') }}" alt="User Icon" class="user-icon">
+                  <span>{{ user.username }}</span>
+              </div>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+
+<!-- Viser en hero-seksjon på forsiden hvis brukeren ikke er autentisert -->
+{% if not user.is_authenticated and request.path == '/' %}
+    <div class="space-top"></div>
+    <div class="hero-wrapper">
+        <div class="hero-text-block">
+            <h1 class="base-hero-heading">BLAD</h1>
+            <h1 class="base-hero-heading outline">SPILL</h1>
+        </div>
+        <div class="space-60px"></div>
+        <a href="/login" class="button-with-icon-2">Logg inn</a>
+    </div>
+    <div class="space-112px"></div>
+{% endif %}
+
+<!-- Viser flash-meldinger hvis det er noen -->
+{% if get_flashed_messages() %}
+    <div class="flash-messages">
+        {% for category, message in get_flashed_messages(with_categories=True) %}
+            <div class="flash-message alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% block content %}
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}
+
+<footer>
+    <div class="footer-container">
+        <div class="space-32px"></div>
+        <div class="footer-footer-top">
+            <div class="w-layout-block container logo-text-container w-container">
+                <a href="/" class="w-nav-brand">
+                    <h5 class="logo">bl</h5>
+                    <h5 class="logo ad">ad</h5>
+                </a>
+            </div>
+            <div class="footer-wrapper">
+                <h6>Sider</h6>
+                <div class="footer-link-wrapper">
+                    <a href="/" class="footer-link"><p>Forside</p></a>
+                </div>
+                <div class="footer-link-wrapper">
+                    <a href="/oversikt-spill" class="footer-link"><p>Spill</p></a>
+                </div>
+                <div class="footer-link-wrapper">
+                    <a href="/notes" class="footer-link"><p>Notater</p></a>
+                </div>
+                <div class="footer-link-wrapper">
+                    <a href="/update_password" class="footer-link"><p>Oppdater Passord</p></a>
+                </div>
+            </div>
+            <div class="footer-wrapper">
+                <h6>Skapere</h6>
+                <div class="footer-creators-wrapper">
+                    <p>Bjarte Landråk</p>
+                    <p>Adrian Dietrichs</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-line"></div>
+        <div class="footer-footer-bottom">
+            <p>© 2024 BLAD SPILL AS. Alle rettigheter reservert </p>
+            <p>Org nr 000 00 000</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

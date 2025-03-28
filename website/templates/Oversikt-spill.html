@@ -1,0 +1,35 @@
+{% extends "Base.html" %}
+
+{% block title %}Spill Oversikt{% endblock %}
+
+{% block content %}
+<div class="spill-oversikt-container">
+    <h1 class="spill-oversikt-title">Velg et Spill</h1>
+    <div class="spill-wrapper">
+        <a href="/mattespill" class="spill-box">
+            <div class="spill-image-container">
+                <img src="{{ url_for('static', filename='Mathematics-Banner.jpg') }}" alt="Mattespill">
+            </div>
+            <p>Mattespill</p>
+        </a>
+        <a href="/snake" class="spill-box">
+            <div class="spill-image-container">
+                <img src="{{ url_for('static', filename='snake.jpg') }}" alt="Slangespill">
+            </div>
+            <p>Slangespill</p>
+        </a>
+        <a href="/sprettball" class="spill-box">
+            <div class="spill-image-container">
+                <img src="{{ url_for('static', filename='sprettball.jpg') }}" alt="Sprettballen">
+            </div>
+            <p>Sprettballen</p>
+        </a>
+        <a href="/bildegate" class="spill-box">
+            <div class="spill-image-container">
+                <img src="{{ url_for('static', filename='gate.jpg') }}" alt="Bildegåte">
+            </div>
+            <p>Gåte</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
