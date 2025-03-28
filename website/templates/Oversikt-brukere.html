@@ -23,12 +23,12 @@
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.user_role }}</td>
+                    <td>{{ user[0] }}</td>
+                    <td>{{ user[1] }}</td>
+                    <td>{{ user[2] }}</td>
                     <td>
-                        {% if user.user_role == 'regular' %}
-                        <form action="{{ url_for('views_bp.delete_user', user_id=user.id) }}" method="POST">
+                        {% if user[2] == 'regular' %}
+                        <form action="{{ url_for('views_bp.delete_user', user_id=user[0]) }}" method="POST">
                             <button type="submit" class="delete-btn">X</button>
                         </form>
                         {% endif %}
