@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Last opp et bilde!</title>
+<link href="{{url_for('static', filename='style.css') }}" rel="stylesheet">
+<style>
+    body {
+    background: #121212;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.li-files {
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px auto;
+    max-width: 400px;
+}
+
+.white_text {
+    color: white;
+    text-align: center;
+}
+
+.button {
+  cursor: pointer;
+  border: 0;
+  padding: 10px 20px;
+  background: #007bff;
+  color: #fff;
+  border-radius: 5px;
+  margin-top: inherit;
+}
+
+</style>
+</head>
+<body>
+    {% extends "Base.html" %}
+
+{% block title %}Files{% endblock %}
+
+{% block content %}
+<h1 class="white_text">Last opp et bilde</h1>
+<form class="li-files" action="{{ url_for('views_bp.files') }}" method="post" enctype="multipart/form-data">
+    <label for="file" class="white_text">Velg et bilde:</label>
+    <input type="file" id="file" name="file" accept="image/*" required>
+    <button type="submit" class="button">Last opp</button>
+</form>
+
+<h2 class="white_text">Dine opplastede filer:</h2>
+<ul>
+    {% for file in files %}
+        <li class="li-files">
+            <p class="white_text">{{ file.filename }} (opplastet: {{ file.uploaded_at }})</p>
+            <img src="{{ url_for('static', filename='../../uploads/' + file.filename) }}" alt="{{ file.filename }}" width="300">
+        </li>
+    {% endfor %}
+</ul>
+
+
+{% endblock %}
+
+
+</body>
+</html>

@@ -1,11 +1,70 @@
-from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for
+from flask import Flask, Blueprint, render_template, request, flash, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from .models import User, HighScores, Note
 from . import db
 import json
+import os
+from .models import Files
+from flask import send_from_directory
 
 # Oppretter en Blueprint kalt 'views_bp' som brukes til å definere ruter og visninger for applikasjonen.
 views_bp = Blueprint('views_bp', __name__)
+
+# Sett opp en mappe for å lagre opplastede bilder (flyttes til app.py)
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+# Sjekk om en fil har en gyldig utvidelse
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Rute for å vise opplastingsskjema og håndtere opplasting
+@views_bp.route('/files', methods=['GET', 'POST'])
+@login_required
+def files():
+    if request.method == 'POST':
+        return upload_file()
+    
+    user_files = Files.query.filter_by(user_id=current_user.id).all()  # Hent filer fra databasen
+    return render_template("Files.html", user=current_user, files=user_files)
+
+# Håndterer filopplasting
+def upload_file():
+    if 'file' not in request.files:
+        flash('Ingen fil valgt', 'error')
+        return redirect(url_for('views_bp.files'))
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        flash('Ingen fil valgt', 'error')
+        return redirect(url_for('views_bp.files'))
+    
+    if file and allowed_file(file.filename):
+        filename = file.filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # Lagre filen i den eksterne "uploads"-mappen
+        file.save(filepath)
+
+        # Lagre filinfo i databasen
+        new_file = Files(user_id=current_user.id, filename=filename)  
+        db.session.add(new_file)
+        db.session.commit()
+
+        flash(f'Fil {filename} lastet opp og lagret i databasen!', 'success')
+        return redirect(url_for('views_bp.files'))
+
+    flash('Filtypen er ikke tillatt', 'error')
+    return redirect(url_for('views_bp.files'))
+
+
+
+@views_bp.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+
 
 # Forsidevisning
 @views_bp.route('/')

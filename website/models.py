@@ -1,6 +1,7 @@
 from . import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
+from datetime import datetime
 
 # Importerer databasen 'db' fra det lokale miljøet
 
@@ -26,3 +27,12 @@ class Note(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Fremmednøkkel som refererer til User-tabellen
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())  
 
+
+class Files(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Koble til bruker
+    filename = db.Column(db.String(255), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)  # Lagre tidspunkt
+
+    def __repr__(self):
+        return f"<Files {self.filename}>"
