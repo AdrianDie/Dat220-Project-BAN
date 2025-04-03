@@ -1,11 +1,10 @@
 from flask import Flask, Blueprint, render_template, request, flash, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from .models import User, HighScores, Note
+import json
+from .queries import *
 from . import db
 import json
-import os
-from .models import Files
-from flask import send_from_directory
 
 # Oppretter en Blueprint kalt 'views_bp' som brukes til å definere ruter og visninger for applikasjonen.
 views_bp = Blueprint('views_bp', __name__)
@@ -88,12 +87,12 @@ def snake():
 @login_required
 def submit_score():
     data = request.get_json()
+    
     score = data.get('score')
+    user_id = current_user.id
 
     if score:
-        new_score = HighScores(score=int(score), user_id=current_user.id)
-        db.session.add(new_score)
-        db.session.commit()
+        new_score(user_id, score)
         return jsonify({"message": "Poengsum lagret"}), 200
     return jsonify({"error": "Ingen poengsum oppgitt"}), 400
 
@@ -101,8 +100,8 @@ def submit_score():
 @views_bp.route('/high-scores')
 @login_required
 def high_scores():
-    top_scores = HighScores.query.order_by(HighScores.score.desc()).limit(3).all()
-    scores_data = [{"username": score.user.username, "score": score.score} for score in top_scores]
+    top_scores = get_best_scores(3)
+    scores_data = [{"username": score, "score": name} for (score, name) in top_scores]
     return jsonify(scores_data)
 
 # Brukeroversikt for administratorer
@@ -111,10 +110,7 @@ def high_scores():
 def brukeroversikt():
     if current_user.user_role == 'admin':
         search_query = request.args.get('search', '')
-        if search_query:
-            users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
-        else:
-            users = User.query.all()
+        users = get_users(f'%{search_query}%')
         return render_template('Oversikt-brukere.html', user=current_user, users=users)
     else:
         flash('Du har ikke tilgang til denne siden.', category='error')
@@ -125,13 +121,15 @@ def brukeroversikt():
 @login_required
 def delete_user(user_id):
     if current_user.user_role == 'admin':
-        user_to_delete = User.query.get_or_404(user_id)
-        if user_to_delete.user_role == 'regular':
-            db.session.delete(user_to_delete)
-            db.session.commit()
-            flash('Bruker slettet', category='success')
-        else:
+        user_role = get_role(user_id)
+        
+        if user_role == 'regular':
+            remove_user(user_id)
+            flash('Bruker slettet', category='success')    
+        elif user_role == 'admin':
             flash('Kan ikke slette brukere som ikke er "regular"', category='error')
+        else:
+            flash('Finner ikke bruker', category='eror')
     else:
         flash('Ingen tilgang', category='error')
     return redirect(url_for('views_bp.brukeroversikt'))
@@ -158,7 +156,7 @@ def spillside():
 @views_bp.route('/notes', methods=['GET'])
 @login_required
 def notes():
-    user_notes = Note.query.filter_by(user_id=current_user.id).all()
+    user_notes = get_notes(current_user.id)
     return render_template("Notes.html", user=current_user, notes=user_notes)
 
 # Legger til et nytt notat til databasen
@@ -167,9 +165,7 @@ def notes():
 def add_note():
     note_content = request.form.get('note')
     if note_content:
-        new_note = Note(data=note_content, user_id=current_user.id)
-        db.session.add(new_note)
-        db.session.commit()
+        new_note(note_content, current_user.id)
         flash('Notat lagret!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
