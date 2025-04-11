@@ -13,7 +13,7 @@ Presentation: April 24/25
 - [ ] public information _needs reworking_
 - [x] game hi-scores
 - [x] User notes
-- [ ] Files _to implement_
+- [x] Files
 - [ ] Comments _to implement_
 - [ ] Clans/Groups _to implement_
 
