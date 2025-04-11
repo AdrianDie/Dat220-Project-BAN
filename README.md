@@ -14,8 +14,8 @@ Presentation: April 24/25
 - [x] game hi-scores
 - [x] User notes
 - [x] Files
-- [ ] Comments _to implement_
-- [ ] Clans/Groups _to implement_
+- [ ] Comments _to implement_ bjarte
+- [ ] Clans/Groups _to implement_ bjarte
 
 
 
