@@ -27,6 +27,28 @@
         </div>
     </div>
    
+
+    <div class="comments-section card shadow-lg p-4 mt-4 bg-white" id="white">
+        <h3>Kommentarer</h3>
+    
+        <form action="{{ url_for('views_bp.add_comment', page_name=page_name) }}" method="post">
+            <textarea name="content" placeholder="Skriv en kommentar..." required rows="3" class="form-control mb-2"></textarea>
+            <button type="submit" class="btn btn-primary">Send kommentar</button>
+        </form>
+    
+        <hr>
+    
+        {% for comment in comments %}
+            <div class="comment border-bottom mb-2 pb-2">
+                <strong>{{ comment.username }}</strong> skrev:<br>
+                {{ comment.content }}
+            </div>
+        {% else %}
+            <p>Ingen kommentarer enda.</p>
+        {% endfor %}
+    </div>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const button = document.getElementById("button");

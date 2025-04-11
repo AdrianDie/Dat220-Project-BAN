@@ -1,5 +1,7 @@
+
 import sqlite3
 
+# Kobler til databasen i 'instance'-mappen
 conn = sqlite3.connect("./instance/database.db")
 cursor = conn.cursor()
 
@@ -7,20 +9,25 @@ cursor.executescript(
     """
 -- SQLite Script for the project
 
--- -----------------------------------------------------
--- Schema Dat220-project
--- -----------------------------------------------------
--- SQLite doesn't use schemas, so the "CREATE SCHEMA" statement is not needed.
--- Instead, we just create the tables directly.
+-- Dropper tabeller hvis de eksisterer for å sikre en ren start (valgfritt, men nyttig under utvikling)
+-- Kommentarer ut hvis du vil beholde data ved re-kjøring uten å slette filen først
+-- DROP TABLE IF EXISTS "Groups";
+-- DROP TABLE IF EXISTS "Comments";
+-- DROP TABLE IF EXISTS "Files";
+-- DROP TABLE IF EXISTS "Public_Information";
+-- DROP TABLE IF EXISTS "Live_chat";
+-- DROP TABLE IF EXISTS "high_scores";
+-- DROP TABLE IF EXISTS "note";
+-- DROP TABLE IF EXISTS "user";
 
 -- -----------------------------------------------------
 -- Table `user`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "user" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "username" TEXT UNIQUE,
-  "password" TEXT,
-  "user_role" TEXT
+  "username" TEXT UNIQUE NOT NULL, -- Lagt til NOT NULL
+  "password" TEXT NOT NULL,        -- Lagt til NOT NULL
+  "user_role" TEXT NOT NULL        -- Lagt til NOT NULL
 );
 
 -- -----------------------------------------------------
@@ -28,10 +35,10 @@ CREATE TABLE IF NOT EXISTS "user" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "note" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "data" TEXT,
-  "user_id" INTEGER,
-  "created_at" TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  "data" TEXT NOT NULL,                      -- Lagt til NOT NULL
+  "user_id" INTEGER NOT NULL,                -- Lagt til NOT NULL
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
@@ -39,32 +46,32 @@ CREATE TABLE IF NOT EXISTS "note" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "high_scores" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "score" INTEGER,
-  "user_id" INTEGER,
-  "created_at" TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  "score" INTEGER NOT NULL,                  -- Lagt til NOT NULL
+  "user_id" INTEGER NOT NULL,                -- Lagt til NOT NULL
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
--- Table `Live_chat`
+-- Table `Live_chat` (Beholdt som den var, vurder om den trengs)
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Live_chat" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "user_id" INTEGER,
   "message_text" TEXT,
   "timestamp" TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE NO ACTION -- Endret til SET NULL hvis bruker slettes
 );
 
 -- -----------------------------------------------------
--- Table `Public_Information`
+-- Table `Public_Information` (Beholdt som den var, vurder om den trengs)
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Public_Information" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "user_id" INTEGER,
+  "user_id" INTEGER UNIQUE, -- Bør nok være UNIQUE hvis det er en profil per bruker
   "profile_description" TEXT,
   "last_updated" TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
@@ -72,35 +79,38 @@ CREATE TABLE IF NOT EXISTS "Public_Information" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Files" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "user_id" INTEGER,
-  "uploaded_at" TIMESTAMP,
-  "filename" TEXT,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  "user_id" INTEGER NOT NULL,               -- Lagt til NOT NULL
+  "filename" TEXT NOT NULL,                 -- Lagt til NOT NULL
+  "uploaded_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------
--- Table `Comments`
+-- Table `Comments` (REVIDERT)
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Comments" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "user_id" INTEGER,
-  "related_entity_id" INTEGER,
-  "comment_text" TEXT,
-  "created_at" TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  "user_id" INTEGER NOT NULL,                 -- Sikrer at kommentaren har en bruker
+  "page" TEXT NOT NULL,                     -- Lagt til kolonne for å identifisere siden kommentaren tilhører
+  "content" TEXT NOT NULL,                    -- Endret fra comment_text, sikrer at kommentaren har innhold
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Sletter kommentar hvis bruker slettes
 );
 
 -- -----------------------------------------------------
--- Table `Groups`
+-- Table `Groups` (Beholdt som den var, vurder om den trengs)
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Groups" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "group_name" TEXT,
+  "group_name" TEXT UNIQUE NOT NULL, -- Lagt til UNIQUE og NOT NULL
   "created_by" INTEGER,
-  "created_at" TIMESTAMP,
-  FOREIGN KEY ("created_by") REFERENCES "user" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
+  FOREIGN KEY ("created_by") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE NO ACTION -- Hva skal skje hvis brukeren som lagde gruppen slettes? SET NULL?
 );
     """
 )
+
 conn.commit()
 conn.close()
+
+print("Database schema created/updated successfully in instance/database.db")
