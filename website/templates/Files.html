@@ -35,10 +35,15 @@
   margin-top: inherit;
 }
 
+.space-112px {
+  min-height: 112px;
+}
+
+
 </style>
 </head>
 <body>
-    {% extends "Base.html" %}
+{% extends "Base.html" %}
 
 {% block title %}Files{% endblock %}
 
@@ -60,7 +65,7 @@
     {% endfor %}
 </ul>
 
-
+<div class="space-112px"></div>
 {% endblock %}
 
 

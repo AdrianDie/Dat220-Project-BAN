@@ -1,4 +1,3 @@
-
 import sqlite3
 
 # Kobler til databasen i 'instance'-mappen
