@@ -22,6 +22,7 @@ def new_score(user_id, score):
     conn.commit()
     conn.close()
 
+# TODO: bruker vi try/except blokken?
 def get_best_scores(limit):
     # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
@@ -106,6 +107,28 @@ def new_note(data, user_id):
     conn.commit()
     conn.close()
 
+def remove_note(note_id, user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    #sjekker om notaten finnes for brukeren
+    cursor.execute("""
+    SELECT COUNT(*) FROM note WHERE id = ? AND user_id = ?
+                   """, (note_id, user_id))
+    
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.close()
+        return False
+    
+    cursor.execute("""
+    DELETE FROM note WHERE id = ? AND user_id = ?               
+    """, (note_id, user_id))
+
+    conn.commit()
+    conn.close()
+    return True
 
 # ---------- REVIDERTE KOMMENTAR-FUNKSJONER ----------
 
@@ -154,3 +177,101 @@ def insert_comment(user_id, page, content):
         conn.close()
         return False # Returnerer False ved feil
 # ---------- SLUTT PÅ REVIDERTE KOMMENTAR-FUNKSJONER ----------
+
+def get_chat(limit):
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+        
+    cursor.execute("""
+    SELECT user.username, Live_chat.message_text, Live_chat.timestamp
+    FROM Live_chat
+    JOIN user ON Live_chat.user_id = user.id
+    ORDER BY Live_chat.timestamp ASC
+    LIMIT ?
+    """, (limit,))
+        
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+    
+def insert_chat(user_id, content):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+        
+    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+    cursor.execute("""
+    INSERT INTO Live_chat (user_id, message_text, timestamp)
+    VALUES (?, ?, ?)
+    """, (user_id, content, current_time))
+        
+    conn.commit()
+    conn.close()
+
+# TODO: store multiple biographies and enable to scroll through old ones
+def get_biography(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+        
+    cursor.execute("""
+    SELECT profile_description 
+    FROM Public_Information 
+    WHERE user_id = ?
+    """, (user_id,))
+        
+    result = cursor.fetchone()
+    conn.close()
+        
+    return result[0] if result else ""
+
+def set_biography(user_id, content):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+        
+    # Sjekk om brukeren allerede har en biografi
+    cursor.execute("""
+    SELECT COUNT(*) 
+    FROM Public_Information 
+    WHERE user_id = ?
+    """, (user_id,))
+
+    exists = cursor.fetchone()[0] > 0
+    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if exists:
+        # Oppdaterer eksisterende biografi
+        cursor.execute("""
+        UPDATE Public_Information 
+        SET profile_description = ?, last_updated = ? 
+        WHERE user_id = ?
+        """, (content, current_time, user_id))
+    else:
+        # Oppretter ny biografiinnføring
+        cursor.execute("""
+        INSERT INTO Public_Information (user_id, profile_description, last_updated) 
+        VALUES (?, ?, ?)
+        """, (user_id, content, current_time))
+        
+    conn.commit()
+    conn.close()
+
+def collect_public_information(username):
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT u.id, u.username, 
+           p.profile_description as biography, p.last_updated as bio_updated
+    FROM user u
+    LEFT JOIN Public_Information p ON u.id = p.user_id
+    WHERE u.username = ?
+    """, (username,))
+    
+    user_data = cursor.fetchone()
+    conn.close()
+    
+    if not user_data:
+        return None
+    
+    return dict(user_data)

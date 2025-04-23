@@ -1,12 +1,11 @@
 from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_from_directory, session # La til session for flash meldinger etc.
 from flask_login import login_required, current_user
 # Importerer funksjonene direkte fra queries
-from .queries import get_comments_for_page, insert_comment # Endret fra website.queries til .queries for relativ import
-from .models import User, HighScores, Note, Files, Comments # Lagt til Comments her også
+from .queries import * # Endret fra website.queries til .queries for relativ import
+from .models import User, Files # Lagt til Comments her også
 from . import db
-import json
 import os
-
+from .auth import update_password
 # Oppretter en Blueprint kalt 'views_bp'
 views_bp = Blueprint('views_bp', __name__)
 
@@ -107,48 +106,33 @@ def spill_mattespill(): # Gi funksjonen et beskrivende navn
 def snake():
     return render_template("Spill-snake.html", user=current_user)
 
-# --- Score håndtering (uendret) ---
+# --- Score håndtering ---
 @views_bp.route('/submit-score', methods=['POST'])
 @login_required
 def submit_score():
     data = request.get_json()
     score = data.get('score')
+    user_id = current_user.id
 
-    if score is not None: # Bedre sjekk enn bare 'if score:' (hvis score er 0)
-        try:
-            new_score_obj = HighScores(score=int(score), user_id=current_user.id)
-            db.session.add(new_score_obj)
-            db.session.commit()
-            return jsonify({"message": "Poengsum lagret"}), 200
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error saving score: {e}")
-            return jsonify({"error": "Kunne ikke lagre poengsum"}), 500
+    if score:
+        new_score(user_id, score)
+        return jsonify({"message": "Poengum lagret"}), 200
     return jsonify({"error": "Ingen poengsum oppgitt"}), 400
 
 @views_bp.route('/high-scores')
 @login_required
 def high_scores():
-    try:
-        # Bruker SQLAlchemy direkte her, som er bra!
-        top_scores = db.session.query(HighScores).join(User).order_by(HighScores.score.desc()).limit(3).all()
-        scores_data = [{"username": score.user.username, "score": score.score} for score in top_scores]
-        return jsonify(scores_data)
-    except Exception as e:
-        print(f"Error fetching high scores: {e}")
-        return jsonify({"error": "Kunne ikke hente high scores"}), 500
+    top_scores = get_best_scores(3)
+    scores_data = [{"username": score, "score": name} for (score, name) in top_scores]
+    return jsonify(scores_data)
 
-
-# --- Brukeradmin (uendret) ---
+# --- Brukeradmin ---
 @views_bp.route('/oversikt-brukere')
 @login_required
 def brukeroversikt():
     if current_user.user_role == 'admin':
         search_query = request.args.get('search', '')
-        if search_query:
-            users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
-        else:
-            users = User.query.all()
+        users = get_users(f'%{search_query}%')
         return render_template('Oversikt-brukere.html', user=current_user, users=users)
     else:
         flash('Du har ikke tilgang til denne siden.', category='error')
@@ -158,26 +142,17 @@ def brukeroversikt():
 @login_required
 def delete_user(user_id):
     if current_user.user_role == 'admin':
-        user_to_delete = User.query.get_or_404(user_id)
-        # Ekstra sjekk: Ikke la admin slette seg selv via denne ruten
-        if user_to_delete.id == current_user.id:
-             flash('Du kan ikke slette din egen konto her.', category='error')
-             return redirect(url_for('views_bp.brukeroversikt'))
-
-        # Sjekker rollen før sletting (selv om DB cascade gjør jobben, kan være greit å ha logikk her)
-        if user_to_delete.user_role != 'admin': # Eller spesifikt 'regular' hvis det er den eneste andre rollen
-            try:
-                db.session.delete(user_to_delete)
-                db.session.commit()
-                flash(f'Bruker {user_to_delete.username} slettet', category='success')
-            except Exception as e:
-                 db.session.rollback()
-                 flash(f'Kunne ikke slette bruker: {e}', category='error')
-                 print(f"Error deleting user: {e}")
+        user_role = get_role(user_id)
+        
+        if user_role == 'regular':
+            remove_user(user_id)
+            flash('Bruker slettet', category='success')    
+        elif user_role == 'admin':
+            flash('Kan ikke slette brukere som ikke er "regular"', category='error')
         else:
-            flash('Kan ikke slette administrator-kontoer.', category='error')
+            flash('Finner ikke bruker', category='eror')
     else:
-        flash('Ingen tilgang til å slette brukere.', category='error')
+        flash('Ingen tilgang', category='error')
     return redirect(url_for('views_bp.brukeroversikt'))
 
 # --- Andre spill (uendret) ---
@@ -196,48 +171,33 @@ def bilde_gate():
 def spillside():
     return render_template("Oversikt-spill.html", user=current_user)
 
-# --- Notater (uendret) ---
+# --- Notater ---
 @views_bp.route('/notes', methods=['GET'])
 @login_required
 def notes():
-    user_notes = Note.query.filter_by(user_id=current_user.id).order_by(Note.created_at.desc()).all() # Lagt til sortering
+    user_notes = get_notes(current_user.id)
     return render_template("Notes.html", user=current_user, notes=user_notes)
 
 @views_bp.route('/add-note', methods=['POST'])
 @login_required
 def add_note():
     note_content = request.form.get('note')
-    if note_content and note_content.strip(): # Sjekk at det ikke bare er mellomrom
-        try:
-            new_note_obj = Note(data=note_content, user_id=current_user.id)
-            db.session.add(new_note_obj)
-            db.session.commit()
-            flash('Notat lagret!', category='success')
-        except Exception as e:
-             db.session.rollback()
-             flash(f'Kunne ikke lagre notat: {e}', category='error')
-             print(f"Error saving note: {e}")
+    if note_content:
+        new_note(note_content, current_user.id)
+        flash('Notat lagret!', category='success')
     else:
-        flash('Notatfeltet kan ikke være tomt.', category='error')
+        flash('Notatfeltet kan ikke være tom.', category='error')
     return redirect(url_for('views_bp.notes'))
 
 @views_bp.route('/delete-note/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
-    note = Note.query.get_or_404(note_id)
-    if note.user_id == current_user.id:
-        try:
-            db.session.delete(note)
-            db.session.commit()
-            flash('Notat slettet!', category='success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Kunne ikke slette notat: {e}', category='error')
-            print(f"Error deleting note: {e}")
+    if remove_note(note_id, current_user.id):
+        flash('Notat slettet!', category='success')
     else:
-        flash('Ingen tilgang til å slette dette notatet.', category='error')
-    return redirect(url_for('views_bp.notes'))
+        flash('Kunne ikke slette notat.', category='error')
 
+    return redirect(url_for('views_bp.notes'))
 
 # ---------- REVIDERT KOMMENTAR-LAGRINGSRUTE ----------
 # Ruten for å motta nye kommentarer
@@ -282,3 +242,47 @@ def add_comment(page_name):
         return redirect(url_for('views_bp.home'))
 
 # ---------- SLUTT PÅ REVIDERING AV KOMMENTAR-LAGRINGSRUTE ----------
+
+@views_bp.route('/chat', methods=['GET'])
+@login_required
+def chat():
+    previous_messages = get_chat(20)
+    return render_template("Chat.html", user=current_user, messages=previous_messages)
+
+@views_bp.route('/settings', methods=['GET'])
+@login_required
+def settings():
+    # Get the user's biography
+    biography = get_biography(current_user.id)
+    return render_template("Settings.html", user=current_user, biography=biography)
+
+@views_bp.route('/save-biography', methods=['POST'])
+@login_required
+def save_biography():
+    biography = request.form.get('biography', '')
+    
+    set_biography(current_user.id, biography)
+    flash('Biografi lagret!', category='success')
+    
+    return redirect(url_for('views_bp.settings'))
+
+@views_bp.route('/profile/<username>', methods=['GET'])
+@login_required
+def profile(username):
+    # Hent brukerdata
+    user_info = collect_public_information(username)
+    
+    if not user_info:
+        flash('Brukeren finnes ikke.', category='error')
+        return redirect(url_for('views_bp.home'))
+    
+    profile_user = {
+        'id': user_info['id'],
+        'username': user_info['username']
+    }
+    
+    return render_template("profile.html", 
+                          user=current_user,
+                          profile_user=profile_user,
+                          biography=user_info['biography'],
+                          bio_updated=user_info['bio_updated'])

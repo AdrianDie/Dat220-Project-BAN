@@ -88,7 +88,7 @@ def sign_up():
     return render_template("Signup.html", user=current_user)
 
 # Rute for å oppdatere brukerens passord
-@auth_bp.route('/update_password', methods=['GET', 'POST'])
+@auth_bp.route('/update-password', methods=['POST'])
 @login_required
 def update_password():
     if request.method == 'POST':
@@ -112,7 +112,7 @@ def update_password():
             current_user.password = generate_password_hash(confirm_password, method='pbkdf2:sha256')
             db.session.commit()
             flash('Passordet er endret', category='success')
-            return redirect(url_for('views_bp.home'))
-
+            return redirect(url_for('views_bp.settings'))
+    
     # Viser siden for å endre passordet
-    return render_template("Update_password.html", user=current_user)
+    return render_template("settings.html", user=current_user)

@@ -1219,3 +1219,32 @@ canvas {
 #white p:last-of-type { 
     color: #adb5bd; 
 }
+
+/* styles for chat */
+.chat-box {
+  height: 400px;
+  overflow-y: auto;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.chat-input-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.chat-message {
+  width: auto;
+  height: auto;
+  min-height: 50px;
+  margin: 10px;
+  transform: rotate(0deg);
+  cursor: default;
+}
+
+.welcome-message {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+}

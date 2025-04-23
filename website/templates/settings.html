@@ -1,14 +1,34 @@
 {% extends "Base.html" %}
 
-{% block title %}Oppdater passord{% endblock %}
+{% block title %}Innstillinger{% endblock %}
 
 {% block content %}
 
 <div class="space-112px"></div>
 
 <div class="form-container">
+    <h2 class="form-title">Profilinformasjon</h2>
+    <form action="/save-biography" method="post">
+        <div class="form-group">
+            <label for="biography">Biografi:</label>
+            <textarea 
+                id="biography" 
+                name="biography" 
+                class="form-control" 
+                rows="4" 
+                placeholder="Skriv litt om deg selv..."
+            >{{ biography if biography else '' }}</textarea>
+            <br>
+            <button type="submit" class="btnn btnn-primary btn-block">Lagre biografi</button>
+        </div>
+    </form>
+</div>
+
+<div class="space-60px"></div>
+
+<div class="form-container">
     <h2 class="form-title">Endre Passord</h2>
-    <form action="#" method="post">
+    <form action="/update-password" method="post">
         <div class="form-group">
             <label for="current_password">Gammelt Passord:</label><br>
             <input 
@@ -41,6 +61,7 @@
                 class="form-control" 
                 name="confirm_password" 
                 placeholder="Gjenta passord"
+                required
             >
         <br>
         </div>

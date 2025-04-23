@@ -1,0 +1,34 @@
+{% extends "Base.html" %}
+
+{% block title %}{{ profile_user.username }} - Profil{% endblock %}
+
+{% block content %}
+
+<div class="space-112px"></div>
+
+<div class="form-container">
+    <h2 class="form-title">Profil: {{ profile_user.username }}</h2>
+    
+    <div class="spill-container" style="width: 100%">        
+        <h4>Biografi</h4>
+        <div class="note-card" style="width: 100%; height: auto; min-height: 100px; transform: none; margin: 10px 0;">
+            {% if biography %}
+                {{ biography }}
+            {% else %}
+                <em>Ingen biografi tilgjengelig</em>
+            {% endif %}
+        </div>
+        
+        {% if bio_updated %}
+        <p><small>Sist oppdatert: {{ bio_updated[:10] }}</small></p>
+        {% endif %}
+        
+        {% if current_user.id == profile_user.id %}
+        <a href="/settings" class="btnn btnn-primary" style="width: auto; margin-top: 20px;">Rediger profil</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="space-112px"></div>
+
+{% endblock %}
