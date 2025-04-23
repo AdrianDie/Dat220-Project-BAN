@@ -8,9 +8,10 @@
 Presentation: April 24/25
 
 ## Tables
+- [ ] Custom implementation of authentication _no flask-login nor SQLalchemy_
 - [x] User data _(private)_
-- [ ] Live chat _needs reworking_
-- [ ] public information _needs reworking_
+- [x] Live chat _needs reworking_
+- [x] public information _needs reworking_
 - [x] game hi-scores
 - [x] User notes
 - [x] Files
