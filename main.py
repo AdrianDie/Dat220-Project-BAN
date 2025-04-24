@@ -1,5 +1,5 @@
 from website import create_app
-from flask import g, request
+from flask import request
 from flask_socketio import SocketIO, emit
 from website.queries import insert_chat, validate_session, get_user_by_id
 

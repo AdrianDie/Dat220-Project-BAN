@@ -6,6 +6,37 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Definerer stien til databasen én gang for enkel gjenbruk
 DATABASE_PATH = "instance/database.db"
 
+def get_files(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT id, filename, uploaded_at 
+    FROM Files 
+    WHERE user_id = ? 
+    ORDER BY uploaded_at DESC
+    """, (user_id,))
+    
+    files = cursor.fetchall()
+    conn.close()
+    
+    return [dict(file) for file in files]
+
+def insert_file(user_id, filename):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    INSERT INTO Files (user_id, filename)
+    VALUES (?, ?)
+    """, (user_id, filename))
+    
+    conn.commit()
+    conn.close()
+    
+    return True
+
 def check_username_exists(username):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()

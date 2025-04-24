@@ -46,8 +46,7 @@ def login():
         if user_id:
             token = create_session(user_id)
             session['token'] = token
-            
-            g.id = user_id
+
             g.user = get_user_by_id(user_id)
             
             flash('Du er nå logget inn!', category='success')
@@ -143,8 +142,8 @@ def update_password():
             flash('Nytt passord kan ikke være det samme som det gamle passordet', category='error')
             return redirect(url_for('views_bp.settings'))
             
-        if verify_password(g.id, current_password):
-            if change_user_password(g.id, new_password):
+        if verify_password(g.user.username, current_password):
+            if change_user_password(g.user.id, new_password):
                 flash('Passordet er endret', category='success')
             else:
                 flash('Kunne ikke endre passord. Prøv igjen.', category='error')

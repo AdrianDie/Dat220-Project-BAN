@@ -21,8 +21,10 @@
     <div class="note-card" draggable="true" ondragstart="drag(event)" id="note-{{ note.id }}">
         <p>{{ note.data}}</p>
         <p class="note-date">{{ note.created_at }}</p>
-        <form action="{{ url_for('views_bp.delete_note', note_id=note.id) }}" method="post">
-            <button class="note-delete-btn" type="submit">Slett</button>
+        <form action="{{ url_for('views_bp.delete_note', note_id=note[0]) }}" method="post">
+            <div class="note-content">{{ note[1] }}</div>
+            <div class="note-date">{{ note[2] }}</div>
+            <button type="submit" class="note-delete-btn">Delete</button>
         </form>
     </div>
     {% else %}

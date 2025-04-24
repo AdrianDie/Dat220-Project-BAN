@@ -10,14 +10,13 @@ cursor.executescript(
 
 -- Dropper tabeller hvis de eksisterer for å sikre en ren start (valgfritt, men nyttig under utvikling)
 -- Kommentarer ut hvis du vil beholde data ved re-kjøring uten å slette filen først
--- DROP TABLE IF EXISTS "Groups";
 -- DROP TABLE IF EXISTS "Comments";
 -- DROP TABLE IF EXISTS "Files";
 -- DROP TABLE IF EXISTS "Public_Information";
 -- DROP TABLE IF EXISTS "Live_chat";
 -- DROP TABLE IF EXISTS "high_scores";
 -- DROP TABLE IF EXISTS "note";
--- DROP TABLE IF EXISTS "feedback"; -- Kan legge til denne også hvis du vil droppe den
+-- DROP TABLE IF EXISTS "feedback";
 -- DROP TABLE IF EXISTS "sessions"
 -- DROP TABLE IF EXISTS "user";
 
@@ -51,10 +50,10 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "note" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "data" TEXT NOT NULL,                      -- Lagt til NOT NULL
-  "user_id" INTEGER NOT NULL,                -- Lagt til NOT NULL
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
+  "data" TEXT NOT NULL,                       
+  "user_id" INTEGER NOT NULL,                
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 );
 
 -- -----------------------------------------------------
@@ -62,10 +61,10 @@ CREATE TABLE IF NOT EXISTS "note" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "high_scores" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "score" INTEGER NOT NULL,                  -- Lagt til NOT NULL
-  "user_id" INTEGER NOT NULL,                -- Lagt til NOT NULL
+  "score" INTEGER NOT NULL,                   
+  "user_id" INTEGER NOT NULL,                 
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION  
 );
 
 -- -----------------------------------------------------
@@ -84,10 +83,10 @@ CREATE TABLE IF NOT EXISTS "Live_chat" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Files" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "user_id" INTEGER NOT NULL,               -- Lagt til NOT NULL
-  "filename" TEXT NOT NULL,                 -- Lagt til NOT NULL
-  "uploaded_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Lagt til ON DELETE CASCADE
+  "user_id" INTEGER NOT NULL,                
+  "filename" TEXT NOT NULL,                  
+  "uploaded_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION  
 );
 
 -- -----------------------------------------------------
@@ -95,22 +94,11 @@ CREATE TABLE IF NOT EXISTS "Files" (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Comments" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "user_id" INTEGER NOT NULL,                 -- Sikrer at kommentaren har en bruker
-  "page" TEXT NOT NULL,                     -- Lagt til kolonne for å identifisere siden kommentaren tilhører
-  "content" TEXT NOT NULL,                    -- Endret fra comment_text, sikrer at kommentaren har innhold
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Sletter kommentar hvis bruker slettes
-);
-
--- -----------------------------------------------------
--- Table `Groups` (Beholdt som den var, vurder om den trengs)
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS "Groups" (
-  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "group_name" TEXT UNIQUE NOT NULL, -- Lagt til UNIQUE og NOT NULL
-  "created_by" INTEGER,
-  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
-  FOREIGN KEY ("created_by") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE NO ACTION -- Hva skal skje hvis brukeren som lagde gruppen slettes? SET NULL?
+  "user_id" INTEGER NOT NULL,               
+  "page" TEXT NOT NULL,                     
+  "content" TEXT NOT NULL,                  
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION 
 );
 
 -- -----------------------------------------------------
@@ -121,10 +109,10 @@ CREATE TABLE IF NOT EXISTS "feedback" (
   "user_id" INTEGER NOT NULL,
   "message" TEXT NOT NULL,
   "submitted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Sletter feedback hvis bruker slettes
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION 
 );
 
-    """ # <-- Pass på at denne er på slutten
+    """ 
 )
 
 conn.commit()

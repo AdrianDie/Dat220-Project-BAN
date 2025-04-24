@@ -1,10 +1,7 @@
 from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_from_directory, g, session
-# Importerer funksjonene direkte fra queries
-from .queries import * # Endret fra website.queries til .queries for relativ import
-from .models import Files # Lagt til Comments her også
-from . import db
+from .queries import *
 import os
-from .auth import login_required, update_password
+from .auth import login_required
 # Oppretter en Blueprint kalt 'views_bp'
 views_bp = Blueprint('views_bp', __name__)
 
@@ -16,14 +13,14 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- Ruter for filopplasting (uendret) ---
 @views_bp.route('/files', methods=['GET', 'POST'])
 @login_required
 def files():
     if request.method == 'POST':
         return upload_file()
 
-    user_files = Files.query.filter_by(user_id=g.user.id).all()
+    # Use get_files function instead of Files.query
+    user_files = get_files(g.user.id)
     return render_template("Files.html", user=g.user, files=user_files)
 
 def upload_file():
@@ -46,12 +43,10 @@ def upload_file():
 
         try:
             file.save(filepath)
-            new_file = Files(user_id=g.user.id, filename=filename)
-            db.session.add(new_file)
-            db.session.commit()
+            # Use insert_file function instead of SQLAlchemy
+            insert_file(g.user.id, filename)
             flash(f'Fil {filename} lastet opp!', 'success')
         except Exception as e:
-            db.session.rollback() # Rull tilbake db-endring hvis lagring feiler
             flash(f'Kunne ikke lagre filen: {e}', 'error')
             print(f"Error saving file: {e}") # Logg feilen
 
@@ -59,7 +54,6 @@ def upload_file():
 
     flash('Filtypen er ikke tillatt', 'error')
     return redirect(url_for('views_bp.files'))
-
 
 @views_bp.route('/uploads/<path:filename>') # Bruk path: for å tillate undermapper evt.
 @login_required # Vurder om denne skal være public eller kreve login
@@ -163,19 +157,22 @@ def brukeroversikt():
 @login_required
 def delete_user(user_id):
     if g.user.user_role == 'admin':
+        # Prevent admin from deleting themselves
+        if int(user_id) == int(g.user.id):
+            flash('Du kan ikke slette din egen konto her.', category='error')
+            return redirect(url_for('views_bp.brukeroversikt'))
+            
         user_role = get_role(user_id)
         
         if user_role == 'regular':
             remove_user(user_id)
-            flash('Bruker slettet', category='success')    
         elif user_role == 'admin':
             flash('Kan ikke slette brukere som ikke er "regular"', category='error')
         else:
-            flash('Finner ikke bruker', category='eror')
+            flash('Finner ikke bruker', category='error')  # Fixed typo in category
     else:
         flash('Ingen tilgang', category='error')
     return redirect(url_for('views_bp.brukeroversikt'))
-
 # --- Andre spill (uendret) ---
 @views_bp.route('/sprettball')
 @login_required
