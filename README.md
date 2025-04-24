@@ -8,6 +8,7 @@
 Presentation: April 24/25
 
 ## Tables
+- [x] Custom implementation of authentication _no flask-login nor SQLalchemy_
 - [x] User data _(private)_
 - [x] Live chat _needs reworking_
 - [x] sessions _needs reworking_
