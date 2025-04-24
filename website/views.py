@@ -307,3 +307,55 @@ def profile(username):
                           profile_user=profile_user,
                           biography=user_info['biography'],
                           bio_updated=user_info['bio_updated'])
+# ---------- RUTE FOR TILBAKEMELDING ----------
+@views_bp.route('/feedback', methods=['GET', 'POST'])
+@login_required # Kun innloggede brukere kan gi feedback
+def feedback():
+    if request.method == 'POST':
+        # Hent meldingen fra skjemaet
+        message = request.form.get('message')
+
+        # Enkel validering: Sjekk at meldingen ikke er tom eller bare mellomrom
+        if not message or not message.strip():
+            flash('Tilbakemeldingen kan ikke være tom.', category='error')
+            # Ikke redirect her, la brukeren se skjemaet igjen med feilmeldingen
+        else:
+            # Prøv å lagre tilbakemeldingen ved hjelp av funksjonen fra queries.py
+            success = add_feedback(user_id=g.user.id, message=message)
+
+            if success:
+                flash('Takk for din tilbakemelding!', category='success')
+                # Omdiriger til en passende side, f.eks. hjemmesiden eller tilbake til feedback-siden
+                return redirect(url_for('views_bp.feedback')) # Viser feedback-siden på nytt (med suksessmelding)
+                # Alternativt: return redirect(url_for('views_bp.home'))
+            else:
+                flash('En feil oppstod. Kunne ikke lagre tilbakemeldingen. Prøv igjen.', category='error')
+                # Ikke redirect her heller, la dem prøve igjen
+
+    # Hvis det er en GET-request (eller POST feilet validering/lagring uten redirect)
+    # Vis feedback-skjemaet
+    return render_template("Feedback.html", user=g.user)
+
+# ---------- RUTE FOR ADMIN TIL Å SE FEEDBACK ----------
+@views_bp.route('/admin/feedback') # En URL som indikerer admin-område
+@login_required # Krever innlogging
+def view_feedback():
+    # Sjekk om brukeren er admin
+    if g.user.user_role != 'admin':
+        # Hvis ikke admin, vis feilmelding og send dem bort
+        flash('Du har ikke tilgang til denne siden.', category='error')
+        return redirect(url_for('views_bp.home')) # Send til forsiden
+
+    # Hvis brukeren ER admin:
+    try:
+        # Hent alle tilbakemeldinger fra databasen via queries.py
+        all_feedbacks = get_all_feedback()
+        # Vis Admin-Feedback.html-malen og send med listen over feedbacks
+        return render_template("Admin-Feedback.html", user=g.user, feedbacks=all_feedbacks)
+    except Exception as e:
+        # Generell feilhåndtering hvis noe går galt med databasehenting
+        flash('Kunne ikke hente tilbakemeldinger fra databasen.', category='error')
+        print(f"Error fetching feedback for admin: {e}") # Logg feilen
+        return redirect(url_for('views_bp.home')) # Send til forsiden ved feil
+
+# ---------- SLUTT PÅ ADMIN FEEDBACK-RUTE ----------

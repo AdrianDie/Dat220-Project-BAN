@@ -29,10 +29,10 @@
                 <!-- Hvis brukeren har rollen 'admin', vis en ekstra lenke til brukeroversikt -->
                 {% if user.user_role == 'admin' %}
                     <a href="/oversikt-brukere" class="nav-link w-nav-link">Users</a>
+                    <a href="{{ url_for('views_bp.view_feedback') }}" class="nav-link w-nav-link">View Feedback</a>
                 {% endif %}
-                <a href="/oversikt-spill" class="nav-link w-nav-link">Spill</a>
-                <a href="/notes" class="nav-link w-nav-link">Notater</a>
-                <a href="/chat" class="nav-link w-nav-link">Chat</a>
+                <a href="/oversikt-spill" class="nav-link w-nav-link">Games</a>
+                <a href="/notes" class="nav-link w-nav-link">Notes</a>
                 <a href="/files" class="nav-link w-nav-link">Files</a>
                 <a href="/settings" class="nav-link w-nav-link">Innstillinger</a>
                 <a href="/logout" class="nav-link w-nav-link">Logg ut</a>
@@ -89,7 +89,7 @@
                 </a>
             </div>
             <div class="footer-wrapper">
-                <h6>Sider</h6>
+                <h6>Main pages</h6>
                 <div class="footer-link-wrapper">
                     <a href="/" class="footer-link"><p>Home</p></a>
                 </div>
@@ -100,7 +100,7 @@
                     <a href="/notes" class="footer-link"><p>Notes</p></a>
                 </div>
                 <div class="footer-link-wrapper">
-                    <a href="/update_password" class="footer-link"><p>Oppdater Passord</p></a>
+                    <a href="/update_password" class="footer-link"><p>Update Password</p></a>
                 </div>
             </div>
             <div class="footer-wrapper">
