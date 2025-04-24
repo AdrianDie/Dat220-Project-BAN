@@ -9,8 +9,8 @@ Presentation: April 24/25
 
 ## Tables
 - [x] User data _(private)_
-- [ ] Live chat _needs reworking_
-- [ ] public information _needs reworking_
+- [x] Live chat _needs reworking_
+- [x] sessions _needs reworking_
 - [x] game hi-scores
 - [x] User notes
 - [x] Files

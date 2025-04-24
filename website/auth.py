@@ -1,91 +1,122 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
-from .models import User
-from werkzeug.security import generate_password_hash, check_password_hash
-from . import db  
-from flask_login import login_user, login_required, logout_user, current_user
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, g
+from functools import wraps
+from .queries import *
 
-# Definerer en Blueprint med navnet 'auth_bp'
 auth_bp = Blueprint('auth_bp', __name__)
 
-# Rute for brukerinnlogging
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = session.get('token')
+        user_id = validate_session(token)
+
+        if not token or not user_id:
+            flash('Du må logge inn for å se denne siden.', category='error')
+            return redirect(url_for('auth_bp.login'))
+        
+        user_data = get_user_by_id(user_id)
+
+        if not user_data:
+            flash('Vennligst logg inn på nytt.', category='error')
+            if token:
+                delete_session(token)
+            session.pop('token', None)
+            return redirect(url_for('auth_bp.login'))  
+
+        class User:
+            pass
+        g.user = User()
+
+        g.user.id = user_id
+        g.user.username = user_data['username']
+        g.user.user_role = user_data['user_role']
+        g.user.is_authenticated = True
+        
+        return f(*args, **kwargs)
+    return wrapper
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         user_name = request.form.get('user_name')
         user_password = request.form.get('user_password')
 
-        # Henter brukeren fra databasen
-        user = User.query.filter_by(username=user_name).first()
-        if user:
-            if check_password_hash(user.password, user_password):
-                flash('Du er nå logget inn!', category='success')
-                login_user(user, remember=True)
-                return redirect(url_for('views_bp.home'))
+        user_id = verify_password(user_name, user_password)
+        
+        if user_id:
+            token = create_session(user_id)
+            session['token'] = token
             
-            else:
-                flash('Feil passord, prøv igjen.', category='error')
-
+            g.id = user_id
+            g.user = get_user_by_id(user_id)
+            
+            flash('Du er nå logget inn!', category='success')
+            response = redirect(url_for('views_bp.home'))
+            response.set_cookie('auth_token', token)
+            return response
         else:
-            flash('Brukernavn eksisterer ikke.', category='error')
+            flash('Feil brukernavn eller passord.', category='error')
 
-    # Viser innloggingsiden
-    return render_template("Login.html", user=current_user)
+    return render_template("Login.html", user=None)
 
-# Rute for brukerutlogging
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    # Logger ut brukeren og omdirigerer til innloggingsiden
-    logout_user()
-    return redirect(url_for('auth_bp.login'))
+    token = session.get('token')
+    if token:
+        delete_session(token)
     
+    session.pop('token', None)
+    flash('Du er nå logget ut.', category='success')
 
-# Rute for brukerregistrering
+    response = redirect(url_for('auth_bp.login'))
+    response.delete_cookie('auth_token')
+    return response
+
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def sign_up():
     if request.method == 'POST':
         user_name = request.form.get('user_name')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        role = ""
 
-        # Bestemmer rollen til brukeren basert på antall eksisterende brukere
-        user_count = User.query.count()
-        if user_count == 0:
-            role = "admin"
-        else:
-            role = "regular"
-        
-        user = User.query.filter_by(username=user_name).first()
-
-        if user:
-            flash('Brukernavn er allerede tatt', category='error')
-
-        elif not user_name or user_name.strip() == "":
+        if not user_name or user_name.strip() == "":
             flash("Brukernavn kan ikke være tomt.")
-
-        elif len(user_name.replace(" ", "")) > 20:
+            return render_template("Signup.html", user=None)
+            
+        if len(user_name.replace(" ", "")) > 20:
             flash('Brukernavn må være kortere enn 20 tegn uten mellomrom', category='error')
-
-        elif password.strip() == "":
+            return render_template("Signup.html", user=None)
+            
+        if password.strip() == "":
             flash("Passord kan ikke være tomt.")
-
-        elif len(password.replace(" ", "")) < 4:
+            return render_template("Signup.html", user=None)
+            
+        if len(password.replace(" ", "")) < 4:
             flash('Passordet må være minst 4 tegn uten mellomrom', category='error')
-
-        elif password != confirm_password:
+            return render_template("Signup.html", user=None)
+            
+        if password != confirm_password:
             flash('Passordene samsvarer ikke', category='error')
-        else:
-            # Oppretter en ny bruker, krypterer passordet og lagrer i databasen
-            new_user = User(username=user_name, password=generate_password_hash(password, method='pbkdf2:sha256'), user_role=role)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user, remember=True)
-            flash('Kontoen er opprettet!', category='success')
-            return redirect(url_for('views_bp.home'))
+            return render_template("Signup.html", user=None)
 
-    # Viser registreringssiden
-    return render_template("Signup.html", user=current_user)
+        if check_username_exists(user_name):
+            flash('Brukernavn er allerede tatt', category='error')
+            return render_template("Signup.html", user=None)
+        
+        user_id = create_user(user_name, password)
+        if user_id:
+            token = create_session(user_id)
+            session['token'] = token
+            
+            flash('Kontoen er opprettet!', category='success')
+            response = redirect(url_for('views_bp.home'))
+            response.set_cookie('auth_token', token)
+            return response
+        else:
+            flash('Kunne ikke opprette konto. Prøv igjen.', category='error')
+
+    return render_template("Signup.html", user=None)
 
 # Rute for å oppdatere brukerens passord
 @auth_bp.route('/update-password', methods=['POST'])
@@ -98,21 +129,28 @@ def update_password():
 
         if new_password.strip() == "":
             flash("Passord kan ikke være tomt.")
-
-        elif len(new_password.replace(" ", "")) < 4:
-            flash('Passordet må være minst 4 tegn uten mellomrom', category='error')
-
-        elif new_password != confirm_password:
-            flash('Passordene samsvarer ikke.', category='error')
-
-        elif current_password == new_password:
-            flash('Nytt passord kan ikke være det samme som det gamle passordet', category='error')
-        else:
-            # Oppdaterer brukerens passord, krypterer det nye passordet og lagrer i databasen
-            current_user.password = generate_password_hash(confirm_password, method='pbkdf2:sha256')
-            db.session.commit()
-            flash('Passordet er endret', category='success')
             return redirect(url_for('views_bp.settings'))
+
+        if len(new_password.replace(" ", "")) < 4:
+            flash('Passordet må være minst 4 tegn uten mellomrom', category='error')
+            return redirect(url_for('views_bp.settings'))
+
+        if new_password != confirm_password:
+            flash('Passordene samsvarer ikke.', category='error')
+            return redirect(url_for('views_bp.settings'))
+
+        if current_password == new_password:
+            flash('Nytt passord kan ikke være det samme som det gamle passordet', category='error')
+            return redirect(url_for('views_bp.settings'))
+            
+        if verify_password(g.id, current_password):
+            if change_user_password(g.id, new_password):
+                flash('Passordet er endret', category='success')
+            else:
+                flash('Kunne ikke endre passord. Prøv igjen.', category='error')
+        else:
+            flash('Nåværende passord er feil.', category='error')
+            
+        return redirect(url_for('views_bp.settings'))
     
-    # Viser siden for å endre passordet
-    return render_template("settings.html", user=current_user)
+    return redirect(url_for('views_bp.settings'))

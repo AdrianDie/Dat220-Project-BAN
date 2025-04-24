@@ -1,21 +1,143 @@
 import sqlite3
-import datetime
+import secrets
+
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Definerer stien til databasen én gang for enkel gjenbruk
 DATABASE_PATH = "instance/database.db"
 
+def check_username_exists(username):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM user WHERE username = ?", (username,))
+    count = cursor.fetchone()[0]
+    
+    conn.close()
+    return count > 0
+
+def create_user(username, password):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM user")
+    user_count = cursor.fetchone()[0]
+    role = "admin" if user_count == 0 else "regular"
+    
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    salt = secrets.token_hex(16)
+    
+    cursor.execute("""
+    INSERT INTO user (username, password, salt, user_role)
+    VALUES (?, ?, ?, ?)
+    """, (username, hashed_password, salt, role))
+    
+    user_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    
+    return user_id
+
+def verify_password(username, password):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, password FROM user WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    
+    conn.close()
+    
+    if not result:
+        return None
+    
+    user_id, stored_password = result
+    
+    if check_password_hash(stored_password, password):
+        return user_id
+    
+    return None
+
+def change_user_password(user_id, new_password):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+    
+    cursor.execute("UPDATE user SET password = ? WHERE id = ?", 
+                  (hashed_password, user_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return True
+
+def create_session(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    # Generate a secure random token
+    token = secrets.token_hex(32)
+    
+    # Insert new session
+    cursor.execute("""
+    INSERT INTO sessions (user_id, token)
+    VALUES (?, ?)
+    """, (user_id, token))
+    
+    conn.commit()
+    conn.close()
+    
+    return token
+
+def validate_session(token):
+    if not token:
+        return None
+        
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT user_id FROM sessions WHERE token = ?
+    """, (token,))
+    
+    result = cursor.fetchone()
+    conn.close()
+    
+    return result[0] if result else None
+
+def delete_session(token):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    DELETE FROM sessions WHERE token = ?
+    """, (token,))
+    
+    conn.commit()
+    conn.close()
+
+def get_user_by_id(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT id, username, user_role, profile_description
+    FROM user WHERE id = ?
+    """, (user_id,))
+    
+    result = cursor.fetchone()
+    conn.close()
+    
+    if not result:
+        return None
+    
+    return dict(result)
+
 def new_score(user_id, score):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # created_at settes automatisk av databasen (DEFAULT CURRENT_TIMESTAMP),
-    # så vi trenger ikke sende den med.
-    # Hvis du *absolutt* vil sette den fra Python:
-    # created_at = datetime.datetime.now()
-    # cursor.execute("""INSERT INTO high_scores(score, user_id, created_at)
-    #                VALUES(?, ?, ?)""", (score, user_id, created_at))
-    # Men det er enklere å la DB gjøre det:
     cursor.execute("""INSERT INTO high_scores(score, user_id)
                    VALUES(?, ?)""", (score, user_id))
 
@@ -103,7 +225,7 @@ def new_note(data, user_id):
 
     # Lar databasen sette created_at
     cursor.execute("""INSERT INTO note(data, user_id)
-                   VALUES(?, ?)""", (data, user_id))
+    VALUES(?, ?)""", (data, user_id))
     conn.commit()
     conn.close()
 
@@ -114,7 +236,7 @@ def remove_note(note_id, user_id):
     #sjekker om notaten finnes for brukeren
     cursor.execute("""
     SELECT COUNT(*) FROM note WHERE id = ? AND user_id = ?
-                   """, (note_id, user_id))
+    """, (note_id, user_id))
     
     count = cursor.fetchone()[0]
 
@@ -198,26 +320,24 @@ def get_chat(limit):
 def insert_chat(user_id, content):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
-        
-    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+                
     cursor.execute("""
-    INSERT INTO Live_chat (user_id, message_text, timestamp)
-    VALUES (?, ?, ?)
-    """, (user_id, content, current_time))
+    INSERT INTO Live_chat (user_id, message_text)
+    VALUES (?, ?)
+    """, (user_id, content,))
         
     conn.commit()
     conn.close()
 
-# TODO: store multiple biographies and enable to scroll through old ones
 def get_biography(user_id):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
         
+    # Updated to get biography from user table
     cursor.execute("""
     SELECT profile_description 
-    FROM Public_Information 
-    WHERE user_id = ?
+    FROM user
+    WHERE id = ?
     """, (user_id,))
         
     result = cursor.fetchone()
@@ -228,44 +348,28 @@ def get_biography(user_id):
 def set_biography(user_id, content):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
-        
-    # Sjekk om brukeren allerede har en biografi
+    
+    # Update biography directly in user table
     cursor.execute("""
-    SELECT COUNT(*) 
-    FROM Public_Information 
-    WHERE user_id = ?
-    """, (user_id,))
-
-    exists = cursor.fetchone()[0] > 0
-    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if exists:
-        # Oppdaterer eksisterende biografi
-        cursor.execute("""
-        UPDATE Public_Information 
-        SET profile_description = ?, last_updated = ? 
-        WHERE user_id = ?
-        """, (content, current_time, user_id))
-    else:
-        # Oppretter ny biografiinnføring
-        cursor.execute("""
-        INSERT INTO Public_Information (user_id, profile_description, last_updated) 
-        VALUES (?, ?, ?)
-        """, (user_id, content, current_time))
-        
+    UPDATE user 
+    SET profile_description = ?, last_updated = CURRENT_TIMESTAMP 
+    WHERE id = ?
+    """, (content, user_id))
+    
     conn.commit()
     conn.close()
-
+    
 def collect_public_information(username):
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
+    # Get all user info including profile info directly from user table
     cursor.execute("""
-    SELECT u.id, u.username, 
-           p.profile_description as biography, p.last_updated as bio_updated
-    FROM user u
-    LEFT JOIN Public_Information p ON u.id = p.user_id
-    WHERE u.username = ?
+    SELECT id, username, profile_description as biography, 
+           last_updated as bio_updated, time_created
+    FROM user
+    WHERE username = ?
     """, (username,))
     
     user_data = cursor.fetchone()

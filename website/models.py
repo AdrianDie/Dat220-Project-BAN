@@ -1,7 +1,6 @@
 from . import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
-from datetime import datetime
 
 # Definerer User-klassen som representerer brukerne i databasen
 class User(db.Model, UserMixin):

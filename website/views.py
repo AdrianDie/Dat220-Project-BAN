@@ -1,11 +1,10 @@
-from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_from_directory, session # La til session for flash meldinger etc.
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for, send_from_directory, g, session
 # Importerer funksjonene direkte fra queries
 from .queries import * # Endret fra website.queries til .queries for relativ import
-from .models import User, Files # Lagt til Comments her også
+from .models import Files # Lagt til Comments her også
 from . import db
 import os
-from .auth import update_password
+from .auth import login_required, update_password
 # Oppretter en Blueprint kalt 'views_bp'
 views_bp = Blueprint('views_bp', __name__)
 
@@ -24,8 +23,8 @@ def files():
     if request.method == 'POST':
         return upload_file()
 
-    user_files = Files.query.filter_by(user_id=current_user.id).all()
-    return render_template("Files.html", user=current_user, files=user_files)
+    user_files = Files.query.filter_by(user_id=g.user.id).all()
+    return render_template("Files.html", user=g.user, files=user_files)
 
 def upload_file():
     if 'file' not in request.files:
@@ -47,7 +46,7 @@ def upload_file():
 
         try:
             file.save(filepath)
-            new_file = Files(user_id=current_user.id, filename=filename)
+            new_file = Files(user_id=g.user.id, filename=filename)
             db.session.add(new_file)
             db.session.commit()
             flash(f'Fil {filename} lastet opp!', 'success')
@@ -70,10 +69,32 @@ def uploaded_file(filename):
     # Sjekk at filen tilhører brukeren eller er ment å være public?
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False) # as_attachment=False viser bildet i nettleser
 
-# --- Forside (uendret) ---
 @views_bp.route('/')
 def home():
-    return render_template("Forside.html", user=current_user)
+    token = session.get('token')
+    user_id = validate_session(token) if token else None
+    user_data = get_user_by_id(user_id) if user_id else None
+    
+    # Create User class once
+    class User:
+        pass
+    
+    g.user = User()
+    
+    # Set default values for anonymous users
+    g.user.id = '0' 
+    g.user.username = 'Guest'
+    g.user.user_role = 'guest'
+    g.user.is_authenticated = False
+    
+    # Override with actual user data if available
+    if user_data:
+        g.user.id = user_id
+        g.user.username = user_data['username']
+        g.user.user_role = user_data['user_role']
+        g.user.is_authenticated = True
+    
+    return render_template("Forside.html", user=g.user)
 
 # ---------- REVIDERT MATTESPILL-RUTE ----------
 # Kombinerer visning av spill og kommentarer i én rute
@@ -90,7 +111,7 @@ def spill_mattespill(): # Gi funksjonen et beskrivende navn
         comments = [] # Vis tomt kommentarfelt ved feil
 
     # Sender både brukerinfo og kommentarer til malen
-    return render_template("Spill-mattespill.html", user=current_user, comments=comments, page_name=page_identifier)
+    return render_template("Spill-mattespill.html", user=g.user, comments=comments, page_name=page_identifier)
 
 # Fjerner den gamle, dupliserte ruten:
 # @views_bp.route('/spill-mattespill', methods=['GET'])
@@ -104,7 +125,7 @@ def spill_mattespill(): # Gi funksjonen et beskrivende navn
 @views_bp.route('/snake')
 @login_required
 def snake():
-    return render_template("Spill-snake.html", user=current_user)
+    return render_template("Spill-snake.html", user=g.user)
 
 # --- Score håndtering ---
 @views_bp.route('/submit-score', methods=['POST'])
@@ -112,7 +133,7 @@ def snake():
 def submit_score():
     data = request.get_json()
     score = data.get('score')
-    user_id = current_user.id
+    user_id = g.user.id
 
     if score:
         new_score(user_id, score)
@@ -130,10 +151,10 @@ def high_scores():
 @views_bp.route('/oversikt-brukere')
 @login_required
 def brukeroversikt():
-    if current_user.user_role == 'admin':
+    if g.user.user_role == 'admin':
         search_query = request.args.get('search', '')
         users = get_users(f'%{search_query}%')
-        return render_template('Oversikt-brukere.html', user=current_user, users=users)
+        return render_template('Oversikt-brukere.html', user=g.user, users=users)
     else:
         flash('Du har ikke tilgang til denne siden.', category='error')
         return redirect(url_for('views_bp.home'))
@@ -141,7 +162,7 @@ def brukeroversikt():
 @views_bp.route('/delete-user/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if current_user.user_role == 'admin':
+    if g.user.user_role == 'admin':
         user_role = get_role(user_id)
         
         if user_role == 'regular':
@@ -159,31 +180,31 @@ def delete_user(user_id):
 @views_bp.route('/sprettball')
 @login_required
 def sprettballen():
-    return render_template("Spill-sprettball.html", user=current_user)
+    return render_template("Spill-sprettball.html", user=g.user)
 
 @views_bp.route('/bildegate')
 @login_required
 def bilde_gate():
-    return render_template("Spill-bildegater.html", user=current_user)
+    return render_template("Spill-bildegater.html", user=g.user)
 
 @views_bp.route('/oversikt-spill')
 @login_required
 def spillside():
-    return render_template("Oversikt-spill.html", user=current_user)
+    return render_template("Oversikt-spill.html", user=g.user)
 
 # --- Notater ---
 @views_bp.route('/notes', methods=['GET'])
 @login_required
 def notes():
-    user_notes = get_notes(current_user.id)
-    return render_template("Notes.html", user=current_user, notes=user_notes)
+    user_notes = get_notes(g.user.id)
+    return render_template("Notes.html", user=g.user, notes=user_notes)
 
 @views_bp.route('/add-note', methods=['POST'])
 @login_required
 def add_note():
     note_content = request.form.get('note')
     if note_content:
-        new_note(note_content, current_user.id)
+        new_note(note_content, g.user.id)
         flash('Notat lagret!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
@@ -192,7 +213,7 @@ def add_note():
 @views_bp.route('/delete-note/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
-    if remove_note(note_id, current_user.id):
+    if remove_note(note_id, g.user.id):
         flash('Notat slettet!', category='success')
     else:
         flash('Kunne ikke slette notat.', category='error')
@@ -223,7 +244,7 @@ def add_comment(page_name):
 
     # Bruker den importerte insert_comment funksjonen fra queries.py
     # Sender med current_user.id (fra Flask-Login), side-identifikator og innhold
-    success = insert_comment(user_id=current_user.id, page=page_name, content=content)
+    success = insert_comment(user_id=g.user.id, page=page_name, content=content)
 
     # Gi tilbakemelding basert på om lagringen var vellykket
     if success:
@@ -247,21 +268,21 @@ def add_comment(page_name):
 @login_required
 def chat():
     previous_messages = get_chat(20)
-    return render_template("Chat.html", user=current_user, messages=previous_messages)
+    return render_template("Chat.html", user=g.user, messages=previous_messages)
 
 @views_bp.route('/settings', methods=['GET'])
 @login_required
 def settings():
     # Get the user's biography
-    biography = get_biography(current_user.id)
-    return render_template("Settings.html", user=current_user, biography=biography)
+    biography = get_biography(g.user.id)
+    return render_template("Settings.html", user=g.user, biography=biography)
 
 @views_bp.route('/save-biography', methods=['POST'])
 @login_required
 def save_biography():
     biography = request.form.get('biography', '')
     
-    set_biography(current_user.id, biography)
+    set_biography(g.user.id, biography)
     flash('Biografi lagret!', category='success')
     
     return redirect(url_for('views_bp.settings'))
@@ -282,7 +303,7 @@ def profile(username):
     }
     
     return render_template("profile.html", 
-                          user=current_user,
+                          user=g.user,
                           profile_user=profile_user,
                           biography=user_info['biography'],
                           bio_updated=user_info['bio_updated'])

@@ -1,21 +1,22 @@
-# funksjon som vil opprette og konfigurere Flask-applikasjonen.
 from website import create_app
+from flask import g, request
 from flask_socketio import SocketIO, emit
-from flask_login import current_user
-from website.queries import insert_chat 
+from website.queries import insert_chat, validate_session, get_user_by_id
 
-# Denne funksjonen returnerer en Flask-app, som vi tilordner til variabelen `app`.
 app = create_app()
 socketio = SocketIO(app)
 
-# Sjekk om skriptet kjøres som hovedprogrammet
 if __name__ == '__main__':
-    # Start Flask-webserveren i debug-modus.
     app.run(debug=True)
     socketio.run(app)
 
 @socketio.on('message')
 def chat_handler(message):
-    message["username"] = current_user.username
-    emit("chat", message, broadcast=True)
-    insert_chat(current_user.id, message["message"])
+    auth_token = request.cookies.get('auth_token')
+    if auth_token:
+        user_id = validate_session(auth_token)
+        if user_id:
+            user_data = get_user_by_id(user_id)
+            message["username"] = user_data['username']
+            emit("chat", message, broadcast=True)
+            insert_chat(user_id, message["message"])
