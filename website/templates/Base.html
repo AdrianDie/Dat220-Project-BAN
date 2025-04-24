@@ -14,24 +14,26 @@
 <body class="body">
   <div class="header-navbar w-nav">
     <a href="/" class="w-nav-brand">
-        <h5 class="logo">bl</h5>
-        <h5 class="logo ad">ad</h5>
+        <h5 class="logo">B</h5>
+        <h5 class="logo ad">A</h5>
+        <h5 class="logo">N</h5>
     </a>
     <div class="nav-menu-container w-container">
         <nav role="navigation" class="nav-menu w-nav-menu">
             <!-- Sjekker om brukeren ikke er autentisert -->
             {% if not user.is_authenticated %}
-                <a href="/login" class="nav-link w-nav-link">Logg inn</a>
-                <a href="/signup" class="nav-link w-nav-link">Registrer</a>
+                <a href="/login" class="nav-link w-nav-link">Sign in</a>
+                <a href="/signup" class="nav-link w-nav-link">Register</a>
             <!-- Hvis brukeren er autentisert -->
             {% else %}
                 <!-- Hvis brukeren har rollen 'admin', vis en ekstra lenke til brukeroversikt -->
                 {% if user.user_role == 'admin' %}
-                    <a href="/oversikt-brukere" class="nav-link w-nav-link">Brukeroversikt</a>
+                    <a href="/oversikt-brukere" class="nav-link w-nav-link">Users</a>
                 {% endif %}
                 <a href="/oversikt-spill" class="nav-link w-nav-link">Spill</a>
                 <a href="/notes" class="nav-link w-nav-link">Notater</a>
                 <a href="/chat" class="nav-link w-nav-link">Chat</a>
+                <a href="/files" class="nav-link w-nav-link">Files</a>
                 <a href="/settings" class="nav-link w-nav-link">Innstillinger</a>
                 <a href="/logout" class="nav-link w-nav-link">Logg ut</a>
                 <div class="user-info">
@@ -49,7 +51,7 @@
     <div class="space-top"></div>
     <div class="hero-wrapper">
         <div class="hero-text-block">
-            <h1 class="base-hero-heading">BLAD</h1>
+            <h1 class="base-hero-heading">BAN</h1>
             <h1 class="base-hero-heading outline">SPILL</h1>
         </div>
         <div class="space-60px"></div>
@@ -81,30 +83,28 @@
         <div class="footer-footer-top">
             <div class="w-layout-block container logo-text-container w-container">
                 <a href="/" class="w-nav-brand">
-                    <h5 class="logo">bl</h5>
-                    <h5 class="logo ad">ad</h5>
+                    <h5 class="logo">b</h5>
+                    <h5 class="logo ad">a</h5>
+                    <h5 class="logo">n</h5>
                 </a>
             </div>
             <div class="footer-wrapper">
                 <h6>Sider</h6>
                 <div class="footer-link-wrapper">
-                    <a href="/" class="footer-link"><p>Forside</p></a>
+                    <a href="/" class="footer-link"><p>Home</p></a>
                 </div>
                 <div class="footer-link-wrapper">
-                    <a href="/oversikt-spill" class="footer-link"><p>Spill</p></a>
+                    <a href="/oversikt-spill" class="footer-link"><p>Games</p></a>
                 </div>
                 <div class="footer-link-wrapper">
-                    <a href="/notes" class="footer-link"><p>Notater</p></a>
+                    <a href="/notes" class="footer-link"><p>Notes</p></a>
                 </div>
                 <div class="footer-link-wrapper">
-                    <a href="/chat" class="footer-link"><p>Chat</p></a>
-                </div>
-                <div class="footer-link-wrapper">
-                    <a href="/settings" class="footer-link"><p>Innstillinger</p></a>
+                    <a href="/update_password" class="footer-link"><p>Oppdater Passord</p></a>
                 </div>
             </div>
             <div class="footer-wrapper">
-                <h6>Skapere</h6>
+                <h6>Made by</h6>
                 <div class="footer-creators-wrapper">
                     <p>Bjarte Landråk</p>
                     <p>Adrian Dietrichs</p>
@@ -114,7 +114,7 @@
         </div>
         <div class="footer-line"></div>
         <div class="footer-footer-bottom">
-            <p>© 2024 BLAD SPILL AS. Alle rettigheter reservert </p>
+            <p>© 2025 BAN AS</p>
             <p>Org nr 000 00 000</p>
         </div>
     </div>

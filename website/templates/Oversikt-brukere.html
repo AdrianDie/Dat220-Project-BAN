@@ -14,27 +14,32 @@
         <table class="user-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Brukernavn</th>
                     <th>Rolle</th>
-                    <th>Slett</th>
+                    <th>Slett</th> 
                 </tr>
             </thead>
             <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user[0] }}</td>
-                    <td>{{ user[1] }}</td>
-                    <td>{{ user[2] }}</td>
-                    <td>
-                        {% if user[2] == 'regular' %}
-                        <form action="{{ url_for('views_bp.delete_user', user_id=user[0]) }}" method="POST">
-                            <button type="submit" class="delete-btn">X</button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
+                {% if users %} 
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.username }}</td>   
+                        <td>{{ u.user_role }}</td>
+                        <td>
+                            {% if u.user_role == 'regular' %}
+                            <form action="{{ url_for('views_bp.delete_user', user_id=u.id) }}" method="POST">
+                                <button type="submit" class="delete-btn">X</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %} {# Slutt på løkken #}
+                {% else %}
+                     {# Vises hvis 'users'-listen er tom #}
+                     <tr>
+                         <td colspan="3">Ingen brukere funnet.</td> {# Juster colspan til antall kolonner #}
+                     </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
