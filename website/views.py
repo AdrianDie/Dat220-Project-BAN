@@ -167,6 +167,7 @@ def delete_user(user_id):
         # Sjekker rollen før sletting (selv om DB cascade gjør jobben, kan være greit å ha logikk her)
         if user_to_delete.user_role != 'admin': # Eller spesifikt 'regular' hvis det er den eneste andre rollen
             try:
+                # CRUD - delete user
                 db.session.delete(user_to_delete)
                 db.session.commit()
                 flash(f'Bruker {user_to_delete.username} slettet', category='success')

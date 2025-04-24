@@ -14,6 +14,7 @@ def login():
         user_name = request.form.get('user_name')
         user_password = request.form.get('user_password')
 
+        # CRUD - read user
         # Henter brukeren fra databasen
         user = User.query.filter_by(username=user_name).first()
         if user:
@@ -76,6 +77,7 @@ def sign_up():
         elif password != confirm_password:
             flash('Passordene samsvarer ikke', category='error')
         else:
+            # CRUD - create user
             # Oppretter en ny bruker, krypterer passordet og lagrer i databasen
             new_user = User(username=user_name, password=generate_password_hash(password, method='pbkdf2:sha256'), user_role=role)
             db.session.add(new_user)
@@ -108,6 +110,7 @@ def update_password():
         elif current_password == new_password:
             flash('Nytt passord kan ikke være det samme som det gamle passordet', category='error')
         else:
+            # CRUD - update user
             # Oppdaterer brukerens passord, krypterer det nye passordet og lagrer i databasen
             current_user.password = generate_password_hash(confirm_password, method='pbkdf2:sha256')
             db.session.commit()
@@ -116,3 +119,5 @@ def update_password():
 
     # Viser siden for å endre passordet
     return render_template("Update_password.html", user=current_user)
+
+# CRUD - delete user er i views.py
