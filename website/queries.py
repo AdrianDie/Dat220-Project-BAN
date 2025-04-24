@@ -154,3 +154,56 @@ def insert_comment(user_id, page, content):
         conn.close()
         return False # Returnerer False ved feil
 # ---------- SLUTT PÅ REVIDERTE KOMMENTAR-FUNKSJONER ----------
+
+# ---------- FUNKSJON FOR TILBAKEMELDING ----------
+
+def add_feedback(user_id, message):
+    """Lagrer en ny tilbakemelding i feedback-tabellen."""
+    try:
+        # Bruker den globale DATABASE_PATH
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        # Bruker korrekt tabellnavn 'feedback' og kolonner 'user_id', 'message'
+        # Lar databasen sette 'id' og 'submitted_at' automatisk
+        cursor.execute("""
+            INSERT INTO feedback (user_id, message)
+            VALUES (?, ?)
+        """, (user_id, message))
+        conn.commit()
+        conn.close()
+        return True # Returnerer True ved suksess
+    except sqlite3.Error as e:
+        print(f"Database error in add_feedback: {e}")
+        # Vurder å logge feilen mer formelt her
+        if conn: # Sjekk om tilkoblingen ble etablert før vi prøver å rulle tilbake/lukke
+            conn.rollback() # Ruller tilbake endringer ved feil
+            conn.close()
+        return False # Returnerer False ved feil
+
+# ---------- SLUTT PÅ FUNKSJON FOR TILBAKEMELDING ----------
+
+def get_all_feedback():
+    """Henter alle tilbakemeldinger med tilhørende brukernavn."""
+    feedback_data = [] # Returner tom liste hvis feil eller ingen feedback
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        # Henter feedback-id, melding, tidspunkt og brukernavn ved å joine tabellene
+        cursor.execute("""
+            SELECT feedback.id, feedback.message, feedback.submitted_at, user.username
+            FROM feedback
+            JOIN user ON feedback.user_id = user.id
+            ORDER BY feedback.submitted_at DESC -- Viser de nyeste først
+        """)
+        # Formaterer resultatet til en liste av dictionaries for enkel bruk i malen
+        feedback_data = [
+            {"id": row[0], "message": row[1], "submitted_at": row[2], "username": row[3]}
+            for row in cursor.fetchall()
+        ]
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Database error in get_all_feedback: {e}")
+        # Vurder logging
+    return feedback_data
+
+# ---------- SLUTT PÅ NY FUNKSJON ----------

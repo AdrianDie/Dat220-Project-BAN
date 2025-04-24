@@ -29,9 +29,11 @@
                 <!-- Hvis brukeren har rollen 'admin', vis en ekstra lenke til brukeroversikt -->
                 {% if user.user_role == 'admin' %}
                     <a href="/oversikt-brukere" class="nav-link w-nav-link">Users</a>
+                    <a href="{{ url_for('views_bp.view_feedback') }}" class="nav-link w-nav-link">View Feedback</a>
                 {% endif %}
                 <a href="/oversikt-spill" class="nav-link w-nav-link">Games</a>
                 <a href="/notes" class="nav-link w-nav-link">Notes</a>
+                <a href="{{ url_for('views_bp.feedback') }}" class="nav-link w-nav-link">Feedback</a>
                 <a href="/files" class="nav-link w-nav-link">Files</a>
                 <a href="/update_password" class="nav-link w-nav-link">Update Password</a>
                 <a href="/logout" class="nav-link w-nav-link">Sign out</a>

@@ -1,0 +1,76 @@
+{% extends "Base.html" %} <!-- Arver layout -->
+
+{% block title %}Mottatte Tilbakemeldinger{% endblock %} <!-- Sidetittel -->
+
+{% block content %} <!-- Innholdsblokk -->
+<div class="content-wrapper"> <!-- Gjenbruk container fra Feedback.html eller bruk en egen -->
+    <h2 class="page-heading">Mottatte Tilbakemeldinger</h2>
+
+    {% if feedbacks %} <!-- Sjekker om det finnes noen tilbakemeldinger i listen vi sender fra Flask -->
+        <div class="table-responsive"> <!-- Hjelpsom for små skjermer -->
+            <table class="feedback-table"> <!-- Tabell for å vise data -->
+                <thead>
+                    <tr>
+                        <th>Bruker</th>
+                        <th>Melding</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fb in feedbacks %} <!-- Går gjennom hver tilbakemelding i listen -->
+                    <tr>
+                        <td>{{ fb.username }}</td> <!-- Viser brukernavn -->
+                        <td>{{ fb.message }}</td> <!-- Viser meldingen -->
+                        <!-- Formaterer tidspunktet for bedre lesbarhet (valgfritt, krever litt mer logikk ev.) -->
+                    </tr>
+                    {% endfor %} <!-- Slutt på løkken -->
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <!-- Vises hvis 'feedbacks'-listen er tom -->
+        <p>Ingen tilbakemeldinger er mottatt ennå.</p>
+    {% endif %} <!-- Slutt på if-sjekken -->
+
+</div>
+
+<!-- Litt enkel CSS for tabellen. Bør helst i style.css -->
+<style>
+    .content-wrapper { /* Gjenbruk fra Feedback.html eller definer på nytt */
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .page-heading {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .table-responsive {
+        overflow-x: auto; /* Gjør tabellen scrollbar på små skjermer */
+    }
+    .feedback-table {
+        width: 100%;
+        border-collapse: collapse; /* Fjerner dobbelte linjer */
+        margin-top: 20px;
+    }
+    .feedback-table th,
+    .feedback-table td {
+        border: 1px solid #ddd; /* Grå kantlinjer */
+        padding: 10px 12px; /* Luft i cellene */
+        text-align: left; /* Venstrestilt tekst */
+        vertical-align: top; /* Juster tekst øverst i cellen */
+    }
+    .feedback-table th {
+        background-color: #e9e9e9; /* Litt mørkere bakgrunn for header */
+        font-weight: bold;
+    }
+    .feedback-table tbody tr:nth-child(even) {
+        background-color: #f8f8f8; /* Stripet effekt for lesbarhet */
+    }
+    /* Juster farger/stiler for å matche ditt design */
+</style>
+
+{% endblock %} <!-- Slutt på innholdsblokken -->

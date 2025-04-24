@@ -17,6 +17,7 @@ cursor.executescript(
 -- DROP TABLE IF EXISTS "Live_chat";
 -- DROP TABLE IF EXISTS "high_scores";
 -- DROP TABLE IF EXISTS "note";
+-- DROP TABLE IF EXISTS "feedback"; -- Kan legge til denne også hvis du vil droppe den
 -- DROP TABLE IF EXISTS "user";
 
 -- -----------------------------------------------------
@@ -106,7 +107,19 @@ CREATE TABLE IF NOT EXISTS "Groups" (
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Bruker default timestamp
   FOREIGN KEY ("created_by") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE NO ACTION -- Hva skal skje hvis brukeren som lagde gruppen slettes? SET NULL?
 );
-    """
+
+-- -----------------------------------------------------
+-- Table `feedback`  <--- NY TABELL HER
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS "feedback" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "user_id" INTEGER NOT NULL,
+  "message" TEXT NOT NULL,
+  "submitted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION -- Sletter feedback hvis bruker slettes
+);
+
+    """ # <-- Pass på at denne er på slutten
 )
 
 conn.commit()
