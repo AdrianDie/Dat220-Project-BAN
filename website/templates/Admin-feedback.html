@@ -2,12 +2,12 @@
 
 {% block title %}Mottatte Tilbakemeldinger{% endblock %} <!-- Sidetittel -->
 
-{% block content %} <!-- Innholdsblokk -->
-<div class="content-wrapper"> <!-- Gjenbruk container fra Feedback.html eller bruk en egen -->
+{% block content %}
+<div class="content-wrapper"> 
     <h2 class="page-heading">Mottatte Tilbakemeldinger</h2>
 
-    {% if feedbacks %} <!-- Sjekker om det finnes noen tilbakemeldinger i listen vi sender fra Flask -->
-        <div class="table-responsive"> <!-- Hjelpsom for små skjermer -->
+    {% if feedbacks %} 
+        <div class="table-responsive">
             <table class="feedback-table"> <!-- Tabell for å vise data -->
                 <thead>
                     <tr>
@@ -28,15 +28,14 @@
             </table>
         </div>
     {% else %}
-        <!-- Vises hvis 'feedbacks'-listen er tom -->
+
         <p>Ingen tilbakemeldinger er mottatt ennå.</p>
     {% endif %} <!-- Slutt på if-sjekken -->
 
 </div>
 
-<!-- Litt enkel CSS for tabellen. Bør helst i style.css -->
 <style>
-    .content-wrapper { /* Gjenbruk fra Feedback.html eller definer på nytt */
+    .content-wrapper { 
         max-width: 960px;
         margin: 40px auto;
         padding: 20px;
@@ -59,19 +58,19 @@
     }
     .feedback-table th,
     .feedback-table td {
-        border: 1px solid #ddd; /* Grå kantlinjer */
-        padding: 10px 12px; /* Luft i cellene */
-        text-align: left; /* Venstrestilt tekst */
-        vertical-align: top; /* Juster tekst øverst i cellen */
+        border: 1px solid #ddd; 
+        padding: 10px 12px; 
+        text-align: left; 
+        vertical-align: top; 
     }
     .feedback-table th {
-        background-color: #e9e9e9; /* Litt mørkere bakgrunn for header */
+        background-color: #e9e9e9; 
         font-weight: bold;
     }
     .feedback-table tbody tr:nth-child(even) {
-        background-color: #f8f8f8; /* Stripet effekt for lesbarhet */
+        background-color: #f8f8f8; 
     }
-    /* Juster farger/stiler for å matche ditt design */
+    
 </style>
 
-{% endblock %} <!-- Slutt på innholdsblokken -->
+{% endblock %} 
