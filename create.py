@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS "Live_chat";
 DROP TABLE IF EXISTS "high_scores";
 DROP TABLE IF EXISTS "note";
 DROP TABLE IF EXISTS "feedback";
-DROP TABLE IF EXISTS "sessions"
+DROP TABLE IF EXISTS "sessions";
 DROP TABLE IF EXISTS "user";
 
 CREATE TABLE IF NOT EXISTS "user" (
@@ -86,11 +86,11 @@ CREATE TABLE IF NOT EXISTS "feedback" (
   FOREIGN KEY ("user_id") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION 
 );
 
-""")
+  """)
 
 conn.commit()
 conn.close()
-from .website.queries import *
+from website.queries import *
 import shutil
 import sys
 import os
