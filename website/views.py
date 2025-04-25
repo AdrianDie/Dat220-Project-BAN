@@ -207,6 +207,18 @@ def add_note():
         flash('Notatfeltet kan ikke være tom.', category='error')
     return redirect(url_for('views_bp.notes'))
 
+@views_bp.route('/update-note/<int:note_id>', methods=['POST'])
+@login_required
+def update_note(note_id):
+    note_content = request.form.get('note')
+
+    if note_content:
+        update_note_content(note_id, g.user.id, note_content)
+        flash('Notat Oppdatert!', category='success')
+    else:
+        flash('Notatfeltet kan ikke være tom.', category='error')
+    return redirect(url_for('views_bp.notes'))
+
 @views_bp.route('/delete-note/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
@@ -217,8 +229,6 @@ def delete_note(note_id):
 
     return redirect(url_for('views_bp.notes'))
 
-# ---------- REVIDERT KOMMENTAR-LAGRINGSRUTE ----------
-# Ruten for å motta nye kommentarer
 @views_bp.route('/add_comment/<page_name>', methods=['POST']) # Bruker page_name som en variabel del av URLen
 @login_required # Krever at brukeren er logget inn
 def add_comment(page_name):
@@ -257,8 +267,6 @@ def add_comment(page_name):
     else:
         # Generell fallback hvis siden ikke er kjent
         return redirect(url_for('views_bp.home'))
-
-# ---------- SLUTT PÅ REVIDERING AV KOMMENTAR-LAGRINGSRUTE ----------
 
 @views_bp.route('/chat', methods=['GET'])
 @login_required

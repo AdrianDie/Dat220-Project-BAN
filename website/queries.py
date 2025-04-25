@@ -201,11 +201,9 @@ def get_users(name):
     return rows
 
 def get_role(user_id):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Bruker korrekt tabellnavn 'user'
     cursor.execute("""
     SELECT user_role FROM user WHERE id = ?
     """, (user_id,))
@@ -215,12 +213,14 @@ def get_role(user_id):
     return rows[0][0] if rows else ""
 
 def remove_user(user_id):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Bruker korrekt tabellnavn 'user'
-    # Husk at ON DELETE CASCADE i create.py vil håndtere sletting av relaterte data (notes, scores, comments etc.)
+    #we dont really care about storing tokens from deleted user, so it can go away too
+    cursor.execute("""
+    DELETE FROM sessions WHERE user_id = ?
+    """, (user_id,))
+
     cursor.execute("""
     DELETE FROM user WHERE id = ?
     """, (user_id,))
@@ -243,12 +243,34 @@ def get_notes(user_id):
 
     return rows
 
-def new_note(data, user_id):
-    # Bruker DATABASE_PATH
+def update_note_content(note_id, user_id, new_content):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Lar databasen sette created_at
+    cursor.execute("""
+    SELECT COUNT(*) FROM note WHERE id = ? AND user_id = ?
+    """, (note_id, user_id))
+    
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        conn.close()
+        return False
+
+    cursor.execute("""
+    UPDATE note 
+    SET data = ?, created_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+    """, (new_content, note_id))
+    
+    conn.commit()
+    conn.close()
+    return True
+
+def new_note(data, user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
     cursor.execute("""INSERT INTO note(data, user_id)
     VALUES(?, ?)""", (data, user_id))
     conn.commit()
@@ -258,7 +280,6 @@ def remove_note(note_id, user_id):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    #sjekker om notaten finnes for brukeren
     cursor.execute("""
     SELECT COUNT(*) FROM note WHERE id = ? AND user_id = ?
     """, (note_id, user_id))

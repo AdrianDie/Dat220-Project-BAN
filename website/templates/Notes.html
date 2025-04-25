@@ -21,11 +21,19 @@
     <div class="note-card" draggable="true" ondragstart="drag(event)" id="note-{{ note.id }}">
         <p>{{ note.data}}</p>
         <p class="note-date">{{ note.created_at }}</p>
+
+        <form action="{{ url_for('views_bp.update_note', note_id=note[0]) }}" method="post">
+            <textarea name="note" class="transparent-textarea">{{ note[1] }}</textarea>
+            <button type="submit" class="note-update-btn">Oppdater</button>
+        </form>
+
+        <div class="note-date">{{ note[2] }}</div>
+
         <form action="{{ url_for('views_bp.delete_note', note_id=note[0]) }}" method="post">
-            <div class="note-content">{{ note[1] }}</div>
-            <div class="note-date">{{ note[2] }}</div>
             <button type="submit" class="note-delete-btn">Delete</button>
         </form>
+
+
     </div>
     {% else %}
     <p>Ingen notater funnet.</p>
