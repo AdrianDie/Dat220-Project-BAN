@@ -163,9 +163,14 @@ def delete_user(user_id):
             return redirect(url_for('views_bp.brukeroversikt'))
             
         user_role = get_role(user_id)
-        
+        # CRUD - Delete
+        # Inne i delete_user funksjonen, etter sjekk om brukeren er admin og ikke sletter seg selv
         if user_role == 'regular':
             remove_user(user_id)
+            # PÅ DENNE LINJEN: Kalles funksjonen remove_user. 
+            # Brukeren med den gitte user_id fra databasen (DELETE).
+            # Denne funksjonen lar en administrator (g.user.user_role == 'admin') slette en annen bruker som har rollen 'regular'. 
+            # Funksjonskallet remove_user(user_id) er stedet der selve slettingen av bruker-entiteten utføres.
         elif user_role == 'admin':
             flash('Kan ikke slette brukere som ikke er "regular"', category='error')
         else:
@@ -193,15 +198,21 @@ def spillside():
 @views_bp.route('/notes', methods=['GET'])
 @login_required
 def notes():
+    #CRUD- Read
     user_notes = get_notes(g.user.id)
+    # PÅ DENNE LINJEN: Kalles funksjonen get_notes, som henter
+    # alle notater tilhørende brukeren fra databasen (READ).
     return render_template("Notes.html", user=g.user, notes=user_notes)
 
 @views_bp.route('/add-note', methods=['POST'])
 @login_required
 def add_note():
     note_content = request.form.get('note')
+    #CRUD - create
     if note_content:
         new_note(note_content, g.user.id)
+         # PÅ DENNE LINJEN: Kalles funksjonen new_note, som lagrer
+         # et nytt notat for brukeren i databasen (CREATE).
         flash('Notat lagret!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
@@ -212,8 +223,11 @@ def add_note():
 def update_note(note_id):
     note_content = request.form.get('note')
 
+    # CRUD- Update
     if note_content:
         update_note_content(note_id, g.user.id, note_content)
+        # PÅ DENNE LINJEN: Kalles funksjonen update_note_content, som
+        # oppdaterer innholdet i et spesifikt notat i databasen (UPDATE).
         flash('Notat Oppdatert!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
@@ -222,7 +236,10 @@ def update_note(note_id):
 @views_bp.route('/delete-note/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
+    #CRUD - Delete
     if remove_note(note_id, g.user.id):
+        # PÅ DENNE LINJEN: Kalles funksjonen remove_note, som forsøker
+        # å slette et spesifikt notat fra databasen (DELETE).
         flash('Notat slettet!', category='success')
     else:
         flash('Kunne ikke slette notat.', category='error')

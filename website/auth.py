@@ -8,13 +8,18 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = session.get('token')
+        # I login_required dekoratoren:
         user_id = validate_session(token)
+        # HER brukes READ Session: Leser og validerer sesjonen fra backend.
 
         if not token or not user_id:
             flash('Du må logge inn for å se denne siden.', category='error')
             return redirect(url_for('auth_bp.login'))
         
+        # Crud - read user
         user_data = get_user_by_id(user_id)
+        # HER brukes READ User: Henter brukerdata basert på ID.
+
 
         if not user_data:
             flash('Vennligst logg inn på nytt.', category='error')
@@ -41,14 +46,21 @@ def login():
         user_name = request.form.get('user_name')
         user_password = request.form.get('user_password')
 
+        # CRUD - Read
         user_id = verify_password(user_name, user_password)
+        # HER brukes READ User: Leser brukerdata for å verifisere passord.
+
         
         if user_id:
+            # I login funksjonen (og tilsvarende i sign_up):
             token = create_session(user_id)
+            # HER brukes CREATE Session: Oppretter en ny sesjon (token).
             session['token'] = token
 
+            # CRUD - Read
             g.user = get_user_by_id(user_id)
-            
+            # PÅ DENNE LINJEN: Hentes brukerdetaljer for den innloggede brukeren (READ).
+
             flash('Du er nå logget inn!', category='success')
             response = redirect(url_for('views_bp.home'))
             response.set_cookie('auth_token', token)
@@ -61,11 +73,18 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    # I login_required dekoratoren (og tilsvarende i logout):
     token = session.get('token')
+    # HER brukes READ Session: Leser sesjons-ID fra brukerens cookie/Flask session.
     if token:
+        # I logout funksjonen (og tilsvarende i login_required feilhåndtering):
         delete_session(token)
-    
+        # HER brukes DELETE Session: Sletter sesjonen fra backend-lagring.
+
+    # I logout funksjonen (og tilsvarende i login_required feilhåndtering):
     session.pop('token', None)
+    # HER brukes DELETE Session: Fjerner sesjons-ID fra brukerens cookie/Flask session.
+
     flash('Du er nå logget ut.', category='success')
 
     response = redirect(url_for('auth_bp.login'))
@@ -99,11 +118,16 @@ def sign_up():
             flash('Passordene samsvarer ikke', category='error')
             return render_template("Signup.html", user=None)
 
+        # CRUD - Read
         if check_username_exists(user_name):
+        # HER brukes READ User: Leser for å sjekke om brukernavn finnes.
             flash('Brukernavn er allerede tatt', category='error')
             return render_template("Signup.html", user=None)
         
+        # CRUD - create user
         user_id = create_user(user_name, password)
+        # HER brukes CREATE User: Oppretter en ny bruker.
+
         if user_id:
             token = create_session(user_id)
             session['token'] = token
@@ -143,7 +167,9 @@ def update_password():
             return redirect(url_for('views_bp.settings'))
             
         if verify_password(g.user.username, current_password):
+            # CRUD - Update
             if change_user_password(g.user.id, new_password):
+            # HER brukes UPDATE User: Oppdaterer brukerens passord.
                 flash('Passordet er endret', category='success')
             else:
                 flash('Kunne ikke endre passord. Prøv igjen.', category='error')
