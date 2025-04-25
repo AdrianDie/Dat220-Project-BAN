@@ -420,10 +420,10 @@ def get_session_count(user_id):
     cursor = conn.cursor()
     
     cursor.execute("""
-    SELECT COUNT(*) FROM sessions WHERE user_id = ?
+    SELECT user_id, COUNT(*) AS session_count FROM sessions WHERE user_id = ? GROUP BY user_id
     """, (user_id,))
     
-    count = cursor.fetchone()[0]
+    count = cursor.fetchone()[1]
     conn.close()
     
     return count
