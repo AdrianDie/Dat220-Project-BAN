@@ -229,14 +229,12 @@ def remove_user(user_id):
     conn.close()
 
 def get_notes(user_id):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Bruker korrekt tabellnavn 'note'
     cursor.execute("""
     SELECT id, data, created_at FROM note WHERE user_id = ? ORDER BY created_at DESC
-    """, (user_id,)) # Lagt til ORDER BY
+    """, (user_id,))
 
     rows = cursor.fetchall()
     conn.close()
@@ -299,14 +297,10 @@ def remove_note(note_id, user_id):
     return True
 
 def get_comments_for_page(page):
-    comments_data = [] # Returner tom liste hvis feil eller ingen kommentarer
+    comments_data = []
     try:
-        # Bruker korrekt DATABASE_PATH
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        # Bruker korrekte tabellnavn 'Comments' og 'user'
-        # Bruker korrekte kolonnenavn 'Comments.content' og 'user.username'
-        # Henter også 'created_at' for sortering
         cursor.execute("""
             SELECT Comments.content, user.username, Comments.created_at
             FROM Comments
@@ -314,34 +308,28 @@ def get_comments_for_page(page):
             WHERE Comments.page = ?
             ORDER BY Comments.created_at DESC
         """, (page,))
-        # Formaterer resultatet til en liste av dictionaries for enkel bruk i malen
         comments_data = [{"content": row[0], "username": row[1], "created_at": row[2]} for row in cursor.fetchall()]
         conn.close()
     except sqlite3.Error as e:
         print(f"Database error in get_comments_for_page: {e}")
-        # Vurder å logge feilen mer formelt her
     return comments_data
 
 def insert_comment(user_id, page, content):
     try:
-        # Bruker korrekt DATABASE_PATH
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        # Bruker korrekt tabellnavn 'Comments' og kolonner 'user_id', 'page', 'content'
-        # Lar databasen sette 'id' og 'created_at' automatisk
         cursor.execute("""
             INSERT INTO Comments (user_id, page, content)
             VALUES (?, ?, ?)
         """, (user_id, page, content))
         conn.commit()
         conn.close()
-        return True # Returnerer True ved suksess
+        return True
     except sqlite3.Error as e:
         print(f"Database error in insert_comment: {e}")
-        # Vurder å logge feilen mer formelt her
-        conn.rollback() # Ruller tilbake endringer ved feil
+        conn.rollback()
         conn.close()
-        return False # Returnerer False ved feil
+        return False
 
 def get_chat(limit):
     conn = sqlite3.connect(DATABASE_PATH)
@@ -452,40 +440,34 @@ def collect_public_information(username):
 def add_feedback(user_id, message):
     """Lagrer en ny tilbakemelding i feedback-tabellen."""
     try:
-        # Bruker den globale DATABASE_PATH
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        # Bruker korrekt tabellnavn 'feedback' og kolonner 'user_id', 'message'
-        # Lar databasen sette 'id' og 'submitted_at' automatisk
         cursor.execute("""
             INSERT INTO feedback (user_id, message)
             VALUES (?, ?)
         """, (user_id, message))
         conn.commit()
         conn.close()
-        return True # Returnerer True ved suksess
+        return True
     except sqlite3.Error as e:
         print(f"Database error in add_feedback: {e}")
-        # Vurder å logge feilen mer formelt her
-        if conn: # Sjekk om tilkoblingen ble etablert før vi prøver å rulle tilbake/lukke
-            conn.rollback() # Ruller tilbake endringer ved feil
+        if conn:
+            conn.rollback()
             conn.close()
-        return False # Returnerer False ved feil
+        return False
 
 def get_all_feedback():
     """Henter alle tilbakemeldinger med tilhørende brukernavn."""
-    feedback_data = [] # Returner tom liste hvis feil eller ingen feedback
+    feedback_data = []
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
-        # Henter feedback-id, melding, tidspunkt og brukernavn ved å joine tabellene
         cursor.execute("""
             SELECT feedback.id, feedback.message, feedback.submitted_at, user.username
             FROM feedback
             JOIN user ON feedback.user_id = user.id
             ORDER BY feedback.submitted_at DESC -- Viser de nyeste først
         """)
-        # Formaterer resultatet til en liste av dictionaries for enkel bruk i malen
         feedback_data = [
             {"id": row[0], "message": row[1], "submitted_at": row[2], "username": row[3]}
             for row in cursor.fetchall()
@@ -493,7 +475,4 @@ def get_all_feedback():
         conn.close()
     except sqlite3.Error as e:
         print(f"Database error in get_all_feedback: {e}")
-        # Vurder logging
     return feedback_data
-
-# ---------- SLUTT PÅ NY FUNKSJON ----------

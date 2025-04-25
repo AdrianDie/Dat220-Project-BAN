@@ -73,17 +73,11 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    # I login_required dekoratoren (og tilsvarende i logout):
     token = session.get('token')
-    # HER brukes READ Session: Leser sesjons-ID fra brukerens cookie/Flask session.
     if token:
-        # I logout funksjonen (og tilsvarende i login_required feilhåndtering):
         delete_session(token)
-        # HER brukes DELETE Session: Sletter sesjonen fra backend-lagring.
 
-    # I logout funksjonen (og tilsvarende i login_required feilhåndtering):
     session.pop('token', None)
-    # HER brukes DELETE Session: Fjerner sesjons-ID fra brukerens cookie/Flask session.
 
     flash('Du er nå logget ut.', category='success')
 
@@ -141,7 +135,6 @@ def sign_up():
 
     return render_template("Signup.html", user=None)
 
-# Rute for å oppdatere brukerens passord
 @auth_bp.route('/update-password', methods=['POST'])
 @login_required
 def update_password():
