@@ -1,35 +1,33 @@
 {% extends "Base.html" %} <!-- Arver layout fra Base.html -->
 
-{% block title %}Tilbakemelding{% endblock %} <!-- Setter sidetittel -->
+{% block title %}Tilbakemelding{% endblock %}
 
-{% block content %} <!-- Starter innholdsblokken -->
-<div class="content-wrapper"> <!-- Bruker en generell container for innhold -->
+{% block content %} 
+<div class="content-wrapper"> 
     <h2 class="page-heading">Send oss din tilbakemelding</h2>
     <p>Vi setter pris på dine tanker og forslag!</p>
 
     <div class="form-container"> <!-- Container for selve skjemaet -->
-        <!-- Skjemaet sender data til /feedback-ruten med POST-metoden -->
+        
         <form method="POST" action="{{ url_for('views_bp.feedback') }}">
             <div class="form-group">
                 <label for="message">Din melding:</label>
-                <!-- Tekstområde for meldingen. 'name="message"' er viktig for Flask -->
+                
                 <textarea name="message" id="message" rows="6" class="form-control" required placeholder="Skriv din tilbakemelding her..."></textarea>
             </div>
 
-            <!-- Send-knapp -->
+
             <button type="submit" class="button-primary">Send tilbakemelding</button>
         </form>
     </div>
 </div>
 
-<!-- Legger til litt enkel CSS inline for demonstrasjon,
-     men bør helst legges i din style.css -->
 <style>
     .content-wrapper {
-        max-width: 800px; /* Begrenser bredden */
-        margin: 40px auto; /* Sentrerer og gir luft over/under */
+        max-width: 800px; 
+        margin: 40px auto; 
         padding: 20px;
-        background-color: #f9f9f9; /* Lys bakgrunn for kontrast */
+        background-color: #f9f9f9; 
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -59,10 +57,10 @@
         font-size: 1rem;
     }
     textarea.form-control {
-        resize: vertical; /* Tillater kun vertikal endring av størrelse */
+        resize: vertical; 
     }
-    .button-primary { /* Gjenbruk gjerne eksisterende knappestil */
-        background-color: #007bff; /* Blå farge som eksempel */
+    .button-primary {
+        background-color: #007bff; 
         color: white;
         padding: 10px 20px;
         border: none;
@@ -72,9 +70,9 @@
         transition: background-color 0.2s ease;
     }
     .button-primary:hover {
-        background-color: #0056b3; /* Mørkere blå ved hover */
+        background-color: #0056b3; 
     }
-    /* Juster farger/stiler for å matche resten av siden din */
+
 </style>
 
-{% endblock %} <!-- Slutter innholdsblokken -->
+{% endblock %} 

@@ -200,8 +200,7 @@ def spillside():
 def notes():
     #CRUD- Read
     user_notes = get_notes(g.user.id)
-    # PÅ DENNE LINJEN: Kalles funksjonen get_notes, som henter
-    # alle notater tilhørende brukeren fra databasen (READ).
+
     return render_template("Notes.html", user=g.user, notes=user_notes)
 
 @views_bp.route('/add-note', methods=['POST'])
@@ -211,8 +210,6 @@ def add_note():
     #CRUD - create
     if note_content:
         new_note(note_content, g.user.id)
-         # PÅ DENNE LINJEN: Kalles funksjonen new_note, som lagrer
-         # et nytt notat for brukeren i databasen (CREATE).
         flash('Notat lagret!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
@@ -226,8 +223,6 @@ def update_note(note_id):
     # CRUD- Update
     if note_content:
         update_note_content(note_id, g.user.id, note_content)
-        # PÅ DENNE LINJEN: Kalles funksjonen update_note_content, som
-        # oppdaterer innholdet i et spesifikt notat i databasen (UPDATE).
         flash('Notat Oppdatert!', category='success')
     else:
         flash('Notatfeltet kan ikke være tom.', category='error')
@@ -238,51 +233,34 @@ def update_note(note_id):
 def delete_note(note_id):
     #CRUD - Delete
     if remove_note(note_id, g.user.id):
-        # PÅ DENNE LINJEN: Kalles funksjonen remove_note, som forsøker
-        # å slette et spesifikt notat fra databasen (DELETE).
         flash('Notat slettet!', category='success')
     else:
         flash('Kunne ikke slette notat.', category='error')
 
     return redirect(url_for('views_bp.notes'))
 
-@views_bp.route('/add_comment/<page_name>', methods=['POST']) # Bruker page_name som en variabel del av URLen
-@login_required # Krever at brukeren er logget inn
+@views_bp.route('/add_comment/<page_name>', methods=['POST']) 
+@login_required 
 def add_comment(page_name):
-    # Henter innholdet fra form-data
     content = request.form.get('content')
 
-    # Validering: Sjekk at innholdet ikke er tomt
     if not content or not content.strip():
         flash("Kommentaren kan ikke være tom.", "error")
-        # Omdirigerer tilbake til siden kommentaren kom fra
-        # Vi må vite hvilken side vi skal tilbake til.
-        # Det enkleste er å omdirigere basert på page_name,
-        # men vi trenger en mapping fra page_name til url_for endpoint.
-        # For nå, la oss hardkode for mattespill:
         if page_name == 'mattespill':
              return redirect(url_for('views_bp.spill_mattespill'))
         else:
-             # Håndter andre sider her, eller en generell fallback
-             return redirect(url_for('views_bp.home')) # Fallback til forsiden
-
-    # Bruker den importerte insert_comment funksjonen fra queries.py
+             return redirect(url_for('views_bp.home'))
+        
     success = insert_comment(user_id=g.user.id, page=page_name, content=content)
 
-    # Gi tilbakemelding basert på om lagringen var vellykket
     if success:
         flash("Kommentar lagt til!", "success")
     else:
         flash("Kunne ikke lagre kommentaren. Prøv igjen.", "error")
 
-    # Omdiriger tilbake til den relevante spillsiden (eller annen side)
     if page_name == 'mattespill':
         return redirect(url_for('views_bp.spill_mattespill'))
-    # Legg til elif for andre sider som får kommentarer
-    # elif page_name == 'snake':
-    #    return redirect(url_for('views_bp.snake'))
     else:
-        # Generell fallback hvis siden ikke er kjent
         return redirect(url_for('views_bp.home'))
 
 @views_bp.route('/chat', methods=['GET'])
@@ -343,53 +321,44 @@ def profile(username):
 
 
 @views_bp.route('/feedback', methods=['GET', 'POST'])
-@login_required # Kun innloggede brukere kan gi feedback
+@login_required 
 def feedback():
     if request.method == 'POST':
-        # Hent meldingen fra skjemaet
         message = request.form.get('message')
 
-        # Enkel validering: Sjekk at meldingen ikke er tom eller bare mellomrom
         if not message or not message.strip():
             flash('Tilbakemeldingen kan ikke være tom.', category='error')
-            # Ikke redirect her, la brukeren se skjemaet igjen med feilmeldingen
         else:
-            # Prøv å lagre tilbakemeldingen ved hjelp av funksjonen fra queries.py
             success = add_feedback(user_id=g.user.id, message=message)
 
             if success:
                 flash('Takk for din tilbakemelding!', category='success')
-                # Omdiriger til en passende side, f.eks. hjemmesiden eller tilbake til feedback-siden
-                return redirect(url_for('views_bp.feedback')) # Viser feedback-siden på nytt (med suksessmelding)
-                # Alternativt: return redirect(url_for('views_bp.home'))
+                return redirect(url_for('views_bp.feedback')) 
             else:
                 flash('En feil oppstod. Kunne ikke lagre tilbakemeldingen. Prøv igjen.', category='error')
-                # Ikke redirect her heller, la dem prøve igjen
+              
 
-    # Hvis det er en GET-request (eller POST feilet validering/lagring uten redirect)
-    # Vis feedback-skjemaet
+   
     return render_template("Feedback.html", user=g.user)
 
 # ---------- RUTE FOR ADMIN TIL Å SE FEEDBACK ----------
-@views_bp.route('/admin/feedback') # En URL som indikerer admin-område
-@login_required # Krever innlogging
+@views_bp.route('/admin/feedback') 
+@login_required
 def view_feedback():
-    # Sjekk om brukeren er admin
+    
     if g.user.user_role != 'admin':
-        # Hvis ikke admin, vis feilmelding og send dem bort
+       
         flash('Du har ikke tilgang til denne siden.', category='error')
-        return redirect(url_for('views_bp.home')) # Send til forsiden
+        return redirect(url_for('views_bp.home')) 
 
     # Hvis brukeren ER admin:
     try:
-        # Hent alle tilbakemeldinger fra databasen via queries.py
+
         all_feedbacks = get_all_feedback()
-        # Vis Admin-Feedback.html-malen og send med listen over feedbacks
         return render_template("Admin-Feedback.html", user=g.user, feedbacks=all_feedbacks)
     except Exception as e:
-        # Generell feilhåndtering hvis noe går galt med databasehenting
         flash('Kunne ikke hente tilbakemeldinger fra databasen.', category='error')
-        print(f"Error fetching feedback for admin: {e}") # Logg feilen
-        return redirect(url_for('views_bp.home')) # Send til forsiden ved feil
+        print(f"Error fetching feedback for admin: {e}") 
+        return redirect(url_for('views_bp.home')) 
 
 # ---------- SLUTT PÅ ADMIN FEEDBACK-RUTE ----------
