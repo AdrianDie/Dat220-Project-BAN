@@ -38,15 +38,20 @@
         const chatBox = document.getElementById('chatBox');
         const messageElement = document.createElement('div');
         messageElement.className = 'note-card chat-message';
-        messageElement.innerHTML = `<strong><a href="/profile/${data.username}">${data.username}</a>:</strong> ${data.message}`;
+
+        const timestamp = data.timestamp || new Date().toLocaleString();
+
+        messageElement.innerHTML = `
+            <strong><a href="/profile/${data.username}">${data.username}</a>:</strong> 
+            ${data.message}
+        `;
         
-        // Limit to 100 messages
-        if (chatBox.children.length >= 100) {
+        if (chatBox.children.length >= 30) {
             chatBox.removeChild(chatBox.firstChild);
         }
         
         chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
     
     window.addEventListener('beforeunload', function (e) {
@@ -64,15 +69,15 @@
     <h1>Live Chat</h1>
     
     <div class="spill-container chat-box" id="chatBox">
-        <!-- Previous messages from database -->
         {% if messages %}
             {% for message in messages %}
             <div class="note-card chat-message">
-                <strong><a href="/profile/{{ message.username }}">{{ message.username }}</a>:</strong> {{ message.message_text }}
+                <strong><a href="/profile/{{ message.username }}">{{ message.username }}</a>:</strong> 
+                {{ message.message_text }}
+                <small class="text-muted timestamp">{{ message.timestamp }}</small>
             </div>
             {% endfor %}
         {% else %}
-            <!-- Welcome message only shown if no previous messages exist -->
             <div class="welcome-message">
                 <p>Velkommen til Live Chat! Start en samtale med andre brukere.</p>
             </div>

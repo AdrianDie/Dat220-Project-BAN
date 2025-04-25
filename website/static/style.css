@@ -1248,3 +1248,14 @@ canvas {
   padding: 20px;
   color: #888;
 }
+
+.timestamp {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  color: #6c757d;
+}
+
+.red {
+  color: grey;
+}

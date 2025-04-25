@@ -20,10 +20,14 @@
         </div>
         
         {% if bio_updated %}
-        <p><small>Sist oppdatert: {{ bio_updated[:10] }}</small></p>
+        <p><small>Sist oppdatert: {{ bio_updated[:16] }}</small></p>
+        {% endif %}
+
+        {% if time_created %}
+        <p><small>Konto opprettet: {{ time_created[:10] }}</small></p>
         {% endif %}
         
-        {% if current_user.id == profile_user.id %}
+        {% if user.id == profile_user.id %}
         <a href="/settings" class="btnn btnn-primary" style="width: auto; margin-top: 20px;">Rediger profil</a>
         {% endif %}
     </div>

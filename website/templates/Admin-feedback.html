@@ -13,16 +13,17 @@
                     <tr>
                         <th>Bruker</th>
                         <th>Melding</th>
+                        <th>Tidspunk</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for fb in feedbacks %} <!-- Går gjennom hver tilbakemelding i listen -->
+                    {% for fb in feedbacks %}
                     <tr>
-                        <td>{{ fb.username }}</td> <!-- Viser brukernavn -->
-                        <td>{{ fb.message }}</td> <!-- Viser meldingen -->
-                        <!-- Formaterer tidspunktet for bedre lesbarhet (valgfritt, krever litt mer logikk ev.) -->
+                        <td><a href="{{ url_for('views_bp.profile', username=fb.username) }}">{{ fb.username }}</a></td>                        
+                        <td>{{ fb.message }}</td>
+                        <td>{{ fb.submitted_at[:16] }}</td>
                     </tr>
-                    {% endfor %} <!-- Slutt på løkken -->
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

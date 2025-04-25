@@ -3,7 +3,6 @@ import secrets
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Definerer stien til databasen én gang for enkel gjenbruk
 DATABASE_PATH = "instance/database.db"
 
 def get_files(user_id):
@@ -106,10 +105,8 @@ def create_session(user_id):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     
-    # Generate a secure random token
     token = secrets.token_hex(32)
     
-    # Insert new session
     cursor.execute("""
     INSERT INTO sessions (user_id, token)
     VALUES (?, ?)
@@ -175,13 +172,10 @@ def new_score(user_id, score):
     conn.commit()
     conn.close()
 
-# TODO: bruker vi try/except blokken?
 def get_best_scores(limit):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Bruker korrekt tabellnavn 'user'
     cursor.execute("""
     SELECT user.username, high_scores.score
     FROM high_scores
@@ -194,16 +188,16 @@ def get_best_scores(limit):
     return rows
 
 def get_users(name):
-    # Bruker DATABASE_PATH
     conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Bruker korrekt tabellnavn 'user'
     cursor.execute("""
     SELECT id, username, user_role FROM user WHERE username LIKE ?
     """, (name,))
     rows = cursor.fetchall()
     conn.close()
+    
     return rows
 
 def get_role(user_id):
@@ -283,8 +277,6 @@ def remove_note(note_id, user_id):
     conn.close()
     return True
 
-# ---------- REVIDERTE KOMMENTAR-FUNKSJONER ----------
-
 def get_comments_for_page(page):
     comments_data = [] # Returner tom liste hvis feil eller ingen kommentarer
     try:
@@ -329,7 +321,6 @@ def insert_comment(user_id, page, content):
         conn.rollback() # Ruller tilbake endringer ved feil
         conn.close()
         return False # Returnerer False ved feil
-# ---------- SLUTT PÅ REVIDERTE KOMMENTAR-FUNKSJONER ----------
 
 def get_chat(limit):
     conn = sqlite3.connect(DATABASE_PATH)
@@ -340,14 +331,15 @@ def get_chat(limit):
     SELECT user.username, Live_chat.message_text, Live_chat.timestamp
     FROM Live_chat
     JOIN user ON Live_chat.user_id = user.id
-    ORDER BY Live_chat.timestamp ASC
+    ORDER BY Live_chat.timestamp DESC
     LIMIT ?
     """, (limit,))
         
     rows = cursor.fetchall()
     conn.close()
-    return rows
-    
+
+    return reversed(rows)
+
 def insert_chat(user_id, content):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -364,7 +356,6 @@ def get_biography(user_id):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
         
-    # Updated to get biography from user table
     cursor.execute("""
     SELECT profile_description 
     FROM user
@@ -380,7 +371,6 @@ def set_biography(user_id, content):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     
-    # Update biography directly in user table
     cursor.execute("""
     UPDATE user 
     SET profile_description = ?, last_updated = CURRENT_TIMESTAMP 
@@ -389,13 +379,40 @@ def set_biography(user_id, content):
     
     conn.commit()
     conn.close()
+
+def clear_sessions_except_current(user_id, current_token):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
     
+    cursor.execute("""
+    DELETE FROM sessions WHERE user_id = ? AND token != ?
+    """, (user_id, current_token))
+    
+    counter = cursor.rowcount
+    conn.commit()
+    conn.close()
+
+    return counter
+
+def get_session_count(user_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT COUNT(*) FROM sessions WHERE user_id = ?
+    """, (user_id,))
+    
+    count = cursor.fetchone()[0]
+    conn.close()
+    
+    return count
+
+
 def collect_public_information(username):
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Get all user info including profile info directly from user table
     cursor.execute("""
     SELECT id, username, profile_description as biography, 
            last_updated as bio_updated, time_created
@@ -410,7 +427,6 @@ def collect_public_information(username):
         return None
     
     return dict(user_data)
-# ---------- FUNKSJON FOR TILBAKEMELDING ----------
 
 def add_feedback(user_id, message):
     """Lagrer en ny tilbakemelding i feedback-tabellen."""
@@ -434,8 +450,6 @@ def add_feedback(user_id, message):
             conn.rollback() # Ruller tilbake endringer ved feil
             conn.close()
         return False # Returnerer False ved feil
-
-# ---------- SLUTT PÅ FUNKSJON FOR TILBAKEMELDING ----------
 
 def get_all_feedback():
     """Henter alle tilbakemeldinger med tilhørende brukernavn."""

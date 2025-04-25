@@ -240,7 +240,6 @@ def add_comment(page_name):
              return redirect(url_for('views_bp.home')) # Fallback til forsiden
 
     # Bruker den importerte insert_comment funksjonen fra queries.py
-    # Sender med current_user.id (fra Flask-Login), side-identifikator og innhold
     success = insert_comment(user_id=g.user.id, page=page_name, content=content)
 
     # Gi tilbakemelding basert på om lagringen var vellykket
@@ -270,10 +269,22 @@ def chat():
 @views_bp.route('/settings', methods=['GET'])
 @login_required
 def settings():
-    # Get the user's biography
     biography = get_biography(g.user.id)
-    return render_template("Settings.html", user=g.user, biography=biography)
+    session_count = get_session_count(g.user.id)
+    return render_template("Settings.html", user=g.user, biography=biography, session_count=session_count)
 
+@views_bp.route('/clear-sessions', methods=['POST'])
+@login_required
+def clear_sessions():
+    current_token = session.get('token')
+    deleted_count = clear_sessions_except_current(g.user.id, current_token)
+    
+    if deleted_count > 0:
+        flash(f'Alle andre økter er nå logget ut.', category='success')
+    else:
+        flash('Ingen andre aktive økter ble funnet.', category='info')
+    
+    return redirect(url_for('views_bp.settings'))
 @views_bp.route('/save-biography', methods=['POST'])
 @login_required
 def save_biography():
@@ -287,7 +298,6 @@ def save_biography():
 @views_bp.route('/profile/<username>', methods=['GET'])
 @login_required
 def profile(username):
-    # Hent brukerdata
     user_info = collect_public_information(username)
     
     if not user_info:
@@ -303,8 +313,10 @@ def profile(username):
                           user=g.user,
                           profile_user=profile_user,
                           biography=user_info['biography'],
-                          bio_updated=user_info['bio_updated'])
-# ---------- RUTE FOR TILBAKEMELDING ----------
+                          bio_updated=user_info['bio_updated'],
+                          time_created=user_info['time_created'])
+
+
 @views_bp.route('/feedback', methods=['GET', 'POST'])
 @login_required # Kun innloggede brukere kan gi feedback
 def feedback():

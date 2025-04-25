@@ -2,6 +2,7 @@ from website import create_app
 from flask import request
 from flask_socketio import SocketIO, emit
 from website.queries import insert_chat, validate_session, get_user_by_id
+from datetime import datetime
 
 app = create_app()
 socketio = SocketIO(app)
@@ -17,6 +18,14 @@ def chat_handler(message):
         user_id = validate_session(auth_token)
         if user_id:
             user_data = get_user_by_id(user_id)
+
+            #edge-case where user is deleted, and still has an active connection
+            if not user_data:
+                return
+
             message["username"] = user_data['username']
+            
+            message["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
             emit("chat", message, broadcast=True)
             insert_chat(user_id, message["message"])

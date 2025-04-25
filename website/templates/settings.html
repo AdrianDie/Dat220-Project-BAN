@@ -10,7 +10,6 @@
     <h2 class="form-title">Profilinformasjon</h2>
     <form action="/save-biography" method="post">
         <div class="form-group">
-            <label for="biography">Biografi:</label>
             <textarea 
                 id="biography" 
                 name="biography" 
@@ -19,7 +18,7 @@
                 placeholder="Skriv litt om deg selv..."
             >{{ biography if biography else '' }}</textarea>
             <br>
-            <button type="submit" class="btnn btnn-primary btn-block">Lagre biografi</button>
+            <button type="submit" class="btnn btnn-primary">Lagre biografi</button>
         </div>
     </form>
 </div>
@@ -66,7 +65,17 @@
         <br>
         </div>
                 
-        <input type="submit" value="Endre Passord" class="btnn btnn-primary btn-block">
+        <input type="submit" value="Endre Passord" class="btnn btnn-primary">
+    </form>
+</div>
+
+<div class="space-60px"></div>
+
+<div class="form-container">
+    <h2 class="form-title">Øktsadministrasjon</h2>
+    <p>Du har for tiden <strong>{{ session_count }}</strong> aktive økter på ulike enheter.</p>
+    <form action="/clear-sessions" method="post">
+        <button type="submit" class="btnn">Logg ut alle andre enheter</button>
     </form>
 </div>
 

@@ -22,8 +22,9 @@
             <tbody>
                 {% if users %} 
                     {% for u in users %}
+
                     <tr>
-                        <td>{{ u.username }}</td>   
+                        <td><a href="profile/{{ u.username }}">{{ u.username }}</a></td>
                         <td>{{ u.user_role }}</td>
                         <td>
                             {% if u.user_role == 'regular' %}
